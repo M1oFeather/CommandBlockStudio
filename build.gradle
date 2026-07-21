@@ -179,6 +179,12 @@ tasks.named('test', Test).configure {
     useJUnitPlatform()
 }
 
+tasks.named('jar', Jar).configure {
+    from(rootProject.file('LICENSE')) {
+        into 'META-INF'
+    }
+}
+
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {
     publications {

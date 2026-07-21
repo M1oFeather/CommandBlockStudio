@@ -14,14 +14,14 @@
   <img src="https://img.shields.io/badge/Java-21-orange?style=flat-square" alt="Java 21">
   <img src="https://img.shields.io/badge/Version-1.0.0-purple?style=flat-square" alt="Version 1.0.0">
   <img src="https://img.shields.io/badge/Install-Client%20%2F%20Server%20Independent-lightgrey?style=flat-square" alt="Client and server installations are independent">
-  <img src="https://img.shields.io/badge/License-CC0--1.0-red?style=flat-square" alt="License CC0-1.0">
+  <img src="https://img.shields.io/badge/License-MIT-red?style=flat-square" alt="License MIT">
 </p>
 
 ---
 
 ## 简介
 
-**Command Block Studio** 是 [Better Command Block UI](https://github.com/Tectato/BetterCommandBlockUI) 的 Minecraft 1.21.1 NeoForge 原生移植与工作台化增强版。
+**Command Block Studio** 是面向 Minecraft 1.21.1 NeoForge 的原生命令方块开发工作台。
 
 它会替换原版命令方块编辑界面，把单行输入框升级为接近代码编辑器的命令工作台，并提供多行可视排版、Brigadier 补全、快速文档、参数填入、问题诊断、输出面板和区域选择辅助。客户端与服务端可以完全独立安装：客户端单独安装即可使用编辑器，服务端单独安装也不会阻止原版客户端连接；双端都安装时会额外启用共享注释、版本化编辑记录和增强的工作区同步。
 
@@ -257,7 +257,7 @@ python -m venv .venv-docs
 .\.venv-docs\Scripts\python.exe -m mkdocs build --strict
 ```
 
-GitHub Pages 工作流位于 [`.github/workflows/docs.yml`](.github/workflows/docs.yml)。首次部署前，需要在仓库 **Settings → Pages** 中将发布源设置为 **GitHub Actions**；之后默认分支上的文档修改会自动构建并部署。
+GitHub Pages 工作流位于 [`.github/workflows/docs.yml`](.github/workflows/docs.yml)。首次部署前，需要在仓库 [**Settings → Pages**](https://github.com/M1oFeather/CommandBlockStudio/settings/pages) 中将发布源设置为 **GitHub Actions**；这个一次性仓库设置不能由默认的 `GITHUB_TOKEN` 自动创建。未启用时工作流会完成文档构建并给出 warning，启用后重新运行工作流或再次推送文档修改即可发布。
 
 ### 命名信息
 
@@ -282,24 +282,20 @@ GitHub Pages 工作流位于 [`.github/workflows/docs.yml`](.github/workflows/do
 
 ---
 
-## 作者与致谢
+## 项目信息
 
 <table>
   <tr>
-    <td align="center"><b>上游作者</b></td>
-    <td>Tec / Tectato</td>
-  </tr>
-  <tr>
-    <td align="center"><b>NeoForge 移植</b></td>
+    <td align="center"><b>作者与维护者</b></td>
     <td>MioFeather</td>
   </tr>
   <tr>
-    <td align="center"><b>上游项目</b></td>
-    <td><a href="https://github.com/Tectato/BetterCommandBlockUI">BetterCommandBlockUI</a></td>
+    <td align="center"><b>原生平台</b></td>
+    <td>Minecraft 1.21.1 · NeoForge 21.1.217</td>
   </tr>
   <tr>
     <td align="center"><b>许可证</b></td>
-    <td>CC0-1.0</td>
+    <td><a href="LICENSE">MIT</a></td>
   </tr>
 </table>
 

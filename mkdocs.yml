@@ -82,7 +82,7 @@ extra_css:
 extra:
   generator: false
 
-copyright: Copyright &copy; 2026 MioFeather · CC0-1.0
+copyright: Copyright &copy; 2026 MioFeather · MIT
 
 nav:
   - 首页: index.md
