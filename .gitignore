@@ -1,0 +1,9 @@
+.gradle/
+.idea/
+.vscode/
+build/
+run/
+run-data/
+site/
+.venv-docs/
+*.iml

@@ -1,0 +1,28 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.miofeather.commandblockstudio.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "ServerGamePacketListenerImplMixin"
+  ],
+  "client": [
+    "AbstractCommandBlockEditScreenAccessor",
+    "ClientCommonPacketListenerImplAccessor",
+    "LocalPlayerAccessor",
+    "ClientPacketListenerMixin",
+    "CommandBlockMinecartMixin",
+    "CommandBlockMixin",
+    "CommandSuggestorAccessor",
+    "MinecraftMixin",
+    "ParticleEngineAccessor",
+    "ScreenAccessor",
+    "ServerPlayerAccessor",
+    "SuggestionWindowAccessor",
+    "EditBoxAccessor",
+    "FontAccessor"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

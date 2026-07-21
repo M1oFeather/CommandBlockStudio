@@ -1,0 +1,105 @@
+# yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
+
+site_name: Command Block Studio
+site_description: Minecraft 1.21.1 NeoForge 原生命令方块编辑工作台
+site_author: MioFeather
+site_url: !ENV [SITE_URL, "http://127.0.0.1:8000/"]
+repo_url: !ENV [REPO_URL, ""]
+repo_name: !ENV [REPO_NAME, ""]
+
+docs_dir: docs
+site_dir: site
+use_directory_urls: true
+strict: true
+
+theme:
+  name: material
+  language: zh
+  logo: assets/icon.png
+  favicon: assets/icon.png
+  font: false
+  features:
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/brightness-7
+        name: 切换到深色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: amber
+      toggle:
+        icon: material/brightness-4
+        name: 切换到浅色模式
+  icon:
+    repo: fontawesome/brands/github
+
+plugins:
+  - search:
+      lang:
+        - zh
+        - en
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra_css:
+  - assets/stylesheets/extra.css
+
+extra:
+  generator: false
+
+copyright: Copyright &copy; 2026 MioFeather · CC0-1.0
+
+nav:
+  - 首页: index.md
+  - 入门:
+      - 安装与兼容性: getting-started/installation.md
+      - 快速上手: getting-started/quick-start.md
+  - 使用指南:
+      - 编辑器工作台: guide/editor.md
+      - 命令智能提示: command-insight.md
+      - 模组命令软兼容: guide/mod-compatibility.md
+      - 工作区与连锁页签: guide/workspace.md
+      - 配置: guide/configuration.md
+      - 服务端增强: guide/server-features.md
+  - 参考:
+      - 快捷键: reference/shortcuts.md
+      - 故障排查: reference/troubleshooting.md
+  - 开发:
+      - 构建与运行: development/building.md
+      - 架构说明: development/architecture.md
+      - 文档维护与部署: development/documentation.md

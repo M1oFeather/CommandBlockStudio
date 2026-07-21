@@ -1,0 +1,52 @@
+package com.miofeather.commandblockstudio.main.ui;
+
+import net.minecraft.network.chat.Component;
+
+public class ColorPicker {
+
+    public enum COLOR{
+        RED,
+        GREEN,
+        BLUE
+    }
+
+    private static int r = 0, g = 0, b = 0;
+
+    public static void setColor(COLOR color, int value){
+        value = Math.min(Math.max(0,value),255);
+        switch(color){
+            case RED:
+                r = value;
+                break;
+            case GREEN:
+                g = value;
+                break;
+            case BLUE:
+                b = value;
+                break;
+        }
+    }
+
+    public static int getColor(COLOR color){
+        return switch (color) {
+            case RED -> r;
+            case GREEN -> g;
+            case BLUE -> b;
+        };
+    }
+
+    public static int getInteger(){
+        return (r << 16) | (g << 8) | (b);
+    }
+
+    public static void setInteger(int rgb) {
+        r = rgb >> 16 & 0xFF;
+        g = rgb >> 8 & 0xFF;
+        b = rgb & 0xFF;
+    }
+
+    public static String getHexString(){
+        return Integer.toHexString(getInteger());
+    }
+
+}
