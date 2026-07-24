@@ -25,6 +25,8 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ClientChatReceivedEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.client.settings.KeyConflictContext;
+import net.neoforged.neoforge.client.settings.KeyModifier;
 import net.neoforged.neoforge.common.NeoForge;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -214,6 +216,7 @@ public class CommandBlockStudio {
     }
 
     private static KeyMapping areaSelectionInput;
+    private static KeyMapping workModeInput;
 
     public CommandBlockStudio(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::registerKeyMappings);
@@ -292,12 +295,22 @@ public class CommandBlockStudio {
     }
 
     private void registerKeyMappings(RegisterKeyMappingsEvent event) {
+        KeyMapping.Category keyCategory = KeyMapping.Category.register(
+                Identifier.parse("command_block_studio:keybinds"));
         areaSelectionInput = new KeyMapping(
                 "key.cbs.areaselectioninput",
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_SEMICOLON,
-                KeyMapping.Category.register(Identifier.parse("command_block_studio:keybinds")));
+                keyCategory);
+        workModeInput = new KeyMapping(
+                "key.cbs.workMode",
+                KeyConflictContext.IN_GAME,
+                KeyModifier.ALT,
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_TAB,
+                keyCategory);
         event.register(areaSelectionInput);
+        event.register(workModeInput);
     }
 
     @SubscribeEvent
@@ -307,6 +320,11 @@ public class CommandBlockStudio {
             while (areaSelectionInput.consumeClick()) {
                 boolean startedSelection = AreaSelectionHandler.areaSelectionInput();
                 client.player.sendSystemMessage(startedSelection ? Component.translatable("cbs.areaSelection.start") : Component.translatable("cbs.areaSelection.end"));
+            }
+        }
+        if (workModeInput != null && client.player != null) {
+            while (workModeInput.consumeClick()) {
+                CommandBlockWorkMode.toggle();
             }
         }
     }
