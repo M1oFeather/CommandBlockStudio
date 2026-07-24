@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 
 site_name: Command Block Studio
-site_description: Minecraft 1.21.1 NeoForge 原生命令方块编辑工作台
+site_description: 多版本 NeoForge 原生命令方块编辑工作台
 site_author: MioFeather
 site_url: !ENV [SITE_URL, "http://127.0.0.1:8000/"]
 repo_url: !ENV [REPO_URL, ""]

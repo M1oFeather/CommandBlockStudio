@@ -1,6 +1,6 @@
 # 构建与运行
 
-本页参数对应默认分支 `1.21.1`。构建 Minecraft `1.21.4` 或 `26.2` 时，请先切换到同名分支；各分支会使用自己的 Minecraft、NeoForge 与映射版本。
+本页参数对应默认分支 `1.21.1`。构建 Minecraft `1.20.4`、`1.21.4` 或 `26.2` 时，请先切换到同名分支；各分支会使用自己的 Minecraft、NeoForge 与映射版本。
 
 ## 开发环境
 
@@ -13,6 +13,8 @@
 | Parchment | 2024.11.17 for 1.21.1 |
 
 仓库保留 NeoForge 官方 MDK 的 Gradle Wrapper、资源模板展开和运行配置结构。
+
+`1.20.4` 分支保留该版本官方 MDK 的 NeoGradle 7 与 Java 17 工具链；较新的三个分支使用 Java 21 和各自模板对应的 ModDevGradle。
 
 ## 构建模组
 

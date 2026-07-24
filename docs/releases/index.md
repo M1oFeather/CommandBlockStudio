@@ -5,7 +5,7 @@
 ## 公用文档策略
 
 - 文档只在默认分支 `1.21.1` 维护和部署。
-- `1.21.4`、`26.2` 等版本分支只维护对应 Minecraft 代码、构建配置和必要 README 差异。
+- `1.20.4`、`1.21.4`、`26.2` 等版本分支只维护对应 Minecraft 代码、构建配置和必要 README 差异。
 - Pull Request 可以验证文档，但非 `1.21.1` 分支的 push 不部署 GitHub Pages。
 
 在线文档始终指向当前维护版本：<https://m1ofeather.github.io/CommandBlockStudio/>

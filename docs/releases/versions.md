@@ -13,11 +13,21 @@ Command Block Studio 的模组版本与 Minecraft 版本是两个不同维度。
 
 | Minecraft | Git 分支 | 文件名格式 | 文档 |
 | --- | --- | --- | --- |
+| `1.20.4` | `1.20.4` | `command_block_studio-<模组版本>-1.20.4-NeoForge.jar` | 使用公用文档 |
 | `1.21.1` | `1.21.1`（默认分支） | `command_block_studio-<模组版本>-1.21.1-NeoForge.jar` | 公用文档源 |
 | `1.21.4` | `1.21.4` | `command_block_studio-<模组版本>-1.21.4-NeoForge.jar` | 使用公用文档 |
 | `26.2` | `26.2` | `command_block_studio-<模组版本>-26.2-NeoForge.jar` | 使用公用文档 |
 
-不要把 `1.21.1` 的 JAR 放进 `1.21.4` 或 `26.2`。NeoForge 会根据模组元数据检查 Minecraft 和加载器版本。
+不要跨 Minecraft 版本混用 JAR。NeoForge 会根据模组元数据检查 Minecraft 和加载器版本。
+
+| Minecraft | 最低 NeoForge | Java |
+| --- | --- | --- |
+| `1.20.4` | `20.4.167` | 17 |
+| `1.21.1` | `21.1.217` | 21 |
+| `1.21.4` | `21.4.121` | 21 |
+| `26.2` | `26.2.0.10-beta` | 21 |
+
+`1.20.4` 使用该版本原生的物品 NBT/SNBT 语法，并保留文本 Component JSON 补全；1.21 系列及之后版本才提供物品数据组件语法与对应注册表补全。
 
 ## 玩家如何选择
 
@@ -38,6 +48,7 @@ Command Block Studio 的模组版本与 Minecraft 版本是两个不同维度。
 ## 开发者如何切换
 
 ```powershell
+git switch 1.20.4
 git switch 1.21.1
 git switch 1.21.4
 git switch 26.2
@@ -48,7 +59,7 @@ git switch 26.2
 切换后执行：
 
 ```powershell
-.\gradlew.bat --no-configuration-cache --console plain clean build
+.\gradlew.bat --no-configuration-cache --console plain build
 ```
 
-最终检查 `build/libs/` 中的文件名，并读取 JAR 内 `META-INF/neoforge.mods.toml` 的版本值。
+最终检查 `build/libs/` 中的文件名，并读取 JAR 内 `META-INF/mods.toml`（1.20.4）或 `META-INF/neoforge.mods.toml`（其余版本）的版本值。

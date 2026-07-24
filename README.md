@@ -9,9 +9,9 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Minecraft-1.21.1%20%7C%201.21.4%20%7C%2026.2-brightgreen?style=flat-square" alt="Minecraft 1.21.1, 1.21.4 and 26.2">
+  <img src="https://img.shields.io/badge/Minecraft-1.20.4%20%7C%201.21.1%20%7C%201.21.4%20%7C%2026.2-brightgreen?style=flat-square" alt="Minecraft 1.20.4, 1.21.1, 1.21.4 and 26.2">
   <img src="https://img.shields.io/badge/NeoForge-Native-blue?style=flat-square" alt="NeoForge Native">
-  <img src="https://img.shields.io/badge/Java-21-orange?style=flat-square" alt="Java 21">
+  <img src="https://img.shields.io/badge/Java-17%20%7C%2021-orange?style=flat-square" alt="Java 17 and 21">
   <img src="https://img.shields.io/badge/Version-1.1.0-purple?style=flat-square" alt="Version 1.1.0">
   <img src="https://img.shields.io/badge/Install-Client%20%2F%20Server%20Independent-lightgrey?style=flat-square" alt="Client and server installations are independent">
   <img src="https://img.shields.io/badge/License-MIT-red?style=flat-square" alt="License MIT">
@@ -21,11 +21,11 @@
 
 ## 简介
 
-**Command Block Studio** 是面向 Minecraft `1.21.1`、`1.21.4` 与 `26.2` 的 NeoForge 原生命令方块开发工作台。
+**Command Block Studio** 是面向 Minecraft `1.20.4`、`1.21.1`、`1.21.4` 与 `26.2` 的 NeoForge 原生命令方块开发工作台。
 
 它会替换原版命令方块编辑界面，把单行输入框升级为接近代码编辑器的命令工作台，并提供多行可视排版、Brigadier 补全、快速文档、参数填入、问题诊断、输出面板和区域选择辅助。客户端与服务端可以完全独立安装：客户端单独安装即可使用编辑器，服务端单独安装也不会阻止原版客户端连接；双端都安装时会额外启用共享注释、版本化编辑记录和增强的工作区同步。
 
-本仓库基于官方 NeoForge MDK 模板创建，保留模板的 Gradle、ModDevGradle、资源模板和运行配置结构；运行层改为 NeoForge 原生实现，不依赖 Fabric API 或兼容层。
+本仓库基于官方 NeoForge MDK 模板创建，各版本保留对应年代的 NeoGradle 或 ModDevGradle、资源模板和运行配置结构；运行层使用 NeoForge 原生实现，不依赖 Fabric API 或兼容层。
 
 完整使用与开发文档位于 [`docs/`](docs/index.md)，版本选择、更新日志与三平台发布资料统一归档在 [`docs/releases/`](docs/releases/index.md)。仓库内的 GitHub Actions 会在默认分支文档更新后自动同步到 GitHub Pages，Pull Request 则执行严格构建校验。
 
@@ -35,11 +35,12 @@
 
 | Minecraft | NeoForge | Git 分支 | 构建文件 |
 | --- | --- | --- | --- |
+| `1.20.4` | `20.4.167` | `1.20.4` | `command_block_studio-<模组版本>-1.20.4-NeoForge.jar` |
 | `1.21.1` | `21.1.217` | `1.21.1`（默认分支） | `command_block_studio-<模组版本>-1.21.1-NeoForge.jar` |
-| `1.21.4` | `21.4.157` | `1.21.4` | `command_block_studio-<模组版本>-1.21.4-NeoForge.jar` |
-| `26.2` | `26.2.0.32-beta` | `26.2` | `command_block_studio-<模组版本>-26.2-NeoForge.jar` |
+| `1.21.4` | `21.4.121` | `1.21.4` | `command_block_studio-<模组版本>-1.21.4-NeoForge.jar` |
+| `26.2` | `26.2.0.10-beta` | `26.2` | `command_block_studio-<模组版本>-26.2-NeoForge.jar` |
 
-三个版本均使用 Java 21。下载时请让文件名中的 Minecraft 版本与游戏实例完全一致；详细选择方法见[版本选择](docs/releases/versions.md)。
+`1.20.4` 使用 Java 17，`1.21.1`、`1.21.4` 与 `26.2` 使用 Java 21。下载时请让文件名中的 Minecraft 版本与游戏实例完全一致；详细选择方法见[版本选择](docs/releases/versions.md)。
 
 ---
 
@@ -298,16 +299,10 @@ GitHub Pages 工作流位于 [`.github/workflows/docs.yml`](.github/workflows/do
   </tr>
   <tr>
     <td align="center"><b>原生平台</b></td>
-    <td>Minecraft 1.21.1 / 1.21.4 / 26.2 · NeoForge</td>
+    <td>Minecraft 1.20.4 / 1.21.1 / 1.21.4 / 26.2 · NeoForge</td>
   </tr>
   <tr>
     <td align="center"><b>许可证</b></td>
     <td><a href="LICENSE">MIT</a></td>
   </tr>
 </table>
-
----
-
-<p align="center">
-  <sub>Upstream README is preserved in <code>UPSTREAM_README.md</code>.</sub>
-</p>

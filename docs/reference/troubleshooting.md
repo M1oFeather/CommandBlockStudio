@@ -4,7 +4,7 @@
 
 依次确认：
 
-1. 游戏版本属于当前支持的 Minecraft `1.21.1`、`1.21.4` 或 `26.2`。
+1. 游戏版本属于当前支持的 Minecraft `1.20.4`、`1.21.1`、`1.21.4` 或 `26.2`。
 2. 加载器是该 Minecraft 构建对应的 NeoForge，详见[版本选择](../releases/versions.md)。
 3. 模组列表中存在 `command_block_studio`。
 4. `mods` 目录中没有重复版本。

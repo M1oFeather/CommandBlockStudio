@@ -53,6 +53,7 @@
 ## 计划发布文件
 
 ```text
+command_block_studio-1.1.0-1.20.4-NeoForge.jar
 command_block_studio-1.1.0-1.21.1-NeoForge.jar
 command_block_studio-1.1.0-1.21.4-NeoForge.jar
 command_block_studio-1.1.0-26.2-NeoForge.jar

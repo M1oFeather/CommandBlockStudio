@@ -16,11 +16,12 @@
 
 | Minecraft | 加载器 | 文件名 |
 | --- | --- | --- |
+| `1.20.4` | NeoForge `20.4.167` | `command_block_studio-1.1.0-1.20.4-NeoForge.jar` |
 | `1.21.1` | NeoForge `21.1.217` | `command_block_studio-1.1.0-1.21.1-NeoForge.jar` |
-| `1.21.4` | NeoForge | `command_block_studio-1.1.0-1.21.4-NeoForge.jar` |
-| `26.2` | NeoForge | `command_block_studio-1.1.0-26.2-NeoForge.jar` |
+| `1.21.4` | NeoForge `21.4.121` | `command_block_studio-1.1.0-1.21.4-NeoForge.jar` |
+| `26.2` | NeoForge `26.2.0.10-beta` | `command_block_studio-1.1.0-26.2-NeoForge.jar` |
 
-三个 Minecraft 版本由 `1.21.1`、`1.21.4` 和 `26.2` 分支维护，其中 `1.21.1` 是默认分支和公共文档源。
+四个 Minecraft 版本由 `1.20.4`、`1.21.1`、`1.21.4` 和 `26.2` 分支维护，其中 `1.21.1` 是默认分支和公共文档源。
 
 ## 一句话简介
 

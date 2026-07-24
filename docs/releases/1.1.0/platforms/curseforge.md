@@ -62,6 +62,7 @@ Command Block Studio is built with native NeoForge APIs. It does not depend on F
 ## File display names
 
 ```text
+Command Block Studio 1.1.0 for Minecraft 1.20.4 (NeoForge)
 Command Block Studio 1.1.0 for Minecraft 1.21.1 (NeoForge)
 Command Block Studio 1.1.0 for Minecraft 1.21.4 (NeoForge)
 Command Block Studio 1.1.0 for Minecraft 26.2 (NeoForge)
@@ -75,4 +76,4 @@ Command Block Studio 1.1.0 for Minecraft 26.2 (NeoForge)
 | Mod loader | NeoForge |
 | Environment | Client optional / Server optional |
 | License | MIT |
-| Java | 21 |
+| Java | 17 for Minecraft 1.20.4; 21 for newer builds |

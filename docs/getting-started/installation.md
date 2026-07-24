@@ -6,9 +6,9 @@
 
 | 组件 | 要求 |
 | --- | --- |
-| Minecraft | 1.21.1、1.21.4 或 26.2 |
+| Minecraft | 1.20.4、1.21.1、1.21.4 或 26.2 |
 | NeoForge | 使用与 Minecraft 构建对应的版本 |
-| Java | 21 |
+| Java | 1.20.4 使用 17；其他受支持版本使用 21 |
 | Command Block Studio | 两端均可选；允许版本不同，服务端增强按可用接口启用 |
 
 !!! warning "不要混用加载器"
@@ -18,7 +18,7 @@
 
 1. 在[版本选择](../releases/versions.md)中确认 Minecraft 与 NeoForge 的对应关系。
 2. 将 `command_block_studio-<模组版本>-<Minecraft版本>-NeoForge.jar` 放入游戏实例的 `mods` 目录。
-3. 使用 Java 21 启动游戏。
+3. 使用该 Minecraft 版本要求的 Java 启动游戏：1.20.4 使用 Java 17，其余受支持版本使用 Java 21。
 4. 在模组列表中确认 **Command Block Studio** 已加载。
 5. 进入有命令方块编辑权限的世界，打开命令方块进行验证。
 
@@ -37,7 +37,7 @@
 
 1. 停止服务器。
 2. 将同版本 JAR 放入服务端 `mods` 目录。
-3. 确认服务器使用 Java 21 和当前 Minecraft 构建对应的 NeoForge。
+3. 确认服务器使用当前 Minecraft 构建对应的 Java 与 NeoForge。
 4. 启动服务器并检查日志中没有依赖或网络载荷注册错误。
 
 ## 双向非必须
