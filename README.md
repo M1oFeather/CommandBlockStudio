@@ -27,7 +27,7 @@
 
 本仓库基于官方 NeoForge MDK 模板创建，保留模板的 Gradle、ModDevGradle、资源模板和运行配置结构；运行层改为 NeoForge 原生实现，不依赖 Fabric API 或兼容层。
 
-完整使用与开发文档位于 [`docs/`](docs/index.md)，并通过 MkDocs 构建。仓库内的 GitHub Actions 会在默认分支文档更新后自动同步到 GitHub Pages，Pull Request 则执行严格构建校验。
+完整使用与开发文档位于 [`docs/`](docs/index.md)，版本选择、更新日志与三平台发布资料统一归档在 [`docs/releases/`](docs/releases/index.md)。仓库内的 GitHub Actions 会在默认分支文档更新后自动同步到 GitHub Pages，Pull Request 则执行严格构建校验。
 
 ---
 

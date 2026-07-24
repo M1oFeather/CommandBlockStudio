@@ -43,6 +43,14 @@ Command Block Studio 是面向 Minecraft 1.21.1 的 NeoForge 原生命令方块�
 
     [排查问题](reference/troubleshooting.md)
 
+-   **版本与更新**
+
+    ---
+
+    选择正确的 Minecraft 构建，并查看 1.1.0 与历史版本更新。
+
+    [查看版本](releases/versions.md)
+
 </div>
 
 ## 兼容性

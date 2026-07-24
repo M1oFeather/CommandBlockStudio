@@ -1,5 +1,8 @@
 # Changelog
 
+The user-facing Chinese changelog and per-release notes are maintained in
+[`docs/releases/`](docs/releases/index.md).
+
 ## 1.1.0 - Unreleased
 
 ### Command block inspection

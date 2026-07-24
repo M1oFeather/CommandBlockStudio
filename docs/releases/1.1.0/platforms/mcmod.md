@@ -63,7 +63,7 @@ Command Block Studio 会替换命令方块和命令方块矿车的原版编辑�
 
 ## 编辑提示
 
-1. 主图使用 `media.md` 的 `00-cover`。
+1. 主图使用 [`media.md`](../media.md) 的 `00-cover`。
 2. 概述正文按 `01-editor`、`03-chat-assistant`、`04-work-mode`、`05-item-tooltip`、`06-run-test` 顺序插图。
 3. “支持版本”只在对应构建完成并通过实机验证后勾选。
 4. 发布完成后，把版本状态、发布日期和下载链接回填到共同信息页。
