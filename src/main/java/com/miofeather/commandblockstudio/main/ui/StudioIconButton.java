@@ -1,14 +1,15 @@
 package com.miofeather.commandblockstudio.main.ui;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 public final class StudioIconButton extends Button {
     private static final int ICON_TEXTURE_SIZE = 32;
 
-    private ResourceLocation icon;
+    private Identifier icon;
     private final int iconSize;
     private final boolean drawIdleBackground;
     private boolean selected;
@@ -21,7 +22,7 @@ public final class StudioIconButton extends Button {
             int width,
             int height,
             Component narration,
-            ResourceLocation icon,
+            Identifier icon,
             int iconSize,
             boolean drawIdleBackground,
             OnPress onPress
@@ -32,7 +33,7 @@ public final class StudioIconButton extends Button {
         this.drawIdleBackground = drawIdleBackground;
     }
 
-    public void setIcon(ResourceLocation icon) {
+    public void setIcon(Identifier icon) {
         this.icon = icon;
         this.smoothTextureConfigured = false;
     }
@@ -46,7 +47,7 @@ public final class StudioIconButton extends Button {
     }
 
     @Override
-    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         if (prominentBackground) {
             int background = !active
                     ? 0xFF252A30
@@ -65,23 +66,18 @@ public final class StudioIconButton extends Button {
         int drawSize = Math.min(iconSize, Math.min(getWidth(), getHeight()));
         int iconX = getX() + (getWidth() - drawSize) / 2;
         int iconY = getY() + (getHeight() - drawSize) / 2;
-        if (!smoothTextureConfigured) {
-            net.minecraft.client.Minecraft.getInstance()
-                    .getTextureManager()
-                    .getTexture(icon)
-                    .setFilter(true, false);
-            smoothTextureConfigured = true;
-        }
+        smoothTextureConfigured = true;
         graphics.blit(
+                RenderPipelines.GUI_TEXTURED,
                 icon,
                 iconX,
                 iconY,
-                drawSize,
-                drawSize,
                 0.0F,
                 0.0F,
                 ICON_TEXTURE_SIZE,
                 ICON_TEXTURE_SIZE,
+                drawSize,
+                drawSize,
                 ICON_TEXTURE_SIZE,
                 ICON_TEXTURE_SIZE
         );

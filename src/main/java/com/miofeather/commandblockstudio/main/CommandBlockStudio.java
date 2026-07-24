@@ -13,9 +13,8 @@ import net.minecraft.client.KeyMapping;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.contents.TranslatableContents;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.core.Direction;
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
@@ -35,80 +34,79 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-@net.neoforged.api.distmarker.OnlyIn(Dist.CLIENT)
 public class CommandBlockStudio {
     public static final String MODID = CommandBlockStudioMod.MODID;
     private static long suppressCommandSaveMessageUntil;
 
-    public static final ResourceLocation SLIDER = ResourceLocation.parse("command_block_studio:slider");
-    public static final ResourceLocation SLIDER_NOTCH = ResourceLocation.parse("command_block_studio:slider_notch");
-    public static final ResourceLocation COMPASS_FRAME = ResourceLocation.parse("command_block_studio:compass_frame");
-    public static final ResourceLocation COMPASS_NEEDLE = ResourceLocation.parse("command_block_studio:compass_needle");
-    public static final ResourceLocation ICON_EDITOR = iconTexture("icon_editor");
-    public static final ResourceLocation ICON_DOCS = iconTexture("icon_docs");
-    public static final ResourceLocation ICON_PROBLEMS = iconTexture("icon_problems");
-    public static final ResourceLocation ICON_OUTPUT = iconTexture("icon_output");
-    public static final ResourceLocation ICON_TOOLS = iconTexture("icon_tools");
-    public static final ResourceLocation ICON_ANNOTATION = iconTexture("icon_annotation");
-    public static final ResourceLocation ICON_PIN = iconTexture("icon_pin");
-    public static final ResourceLocation ICON_PIN_ACTIVE = iconTexture("icon_pin_active");
-    public static final ResourceLocation ICON_ARROW_LEFT = iconTexture("icon_arrow_left");
-    public static final ResourceLocation ICON_ARROW_RIGHT = iconTexture("icon_arrow_right");
-    public static final ResourceLocation ICON_RUN = iconTexture("icon_run");
+    public static final Identifier SLIDER = Identifier.parse("command_block_studio:slider");
+    public static final Identifier SLIDER_NOTCH = Identifier.parse("command_block_studio:slider_notch");
+    public static final Identifier COMPASS_FRAME = Identifier.parse("command_block_studio:compass_frame");
+    public static final Identifier COMPASS_NEEDLE = Identifier.parse("command_block_studio:compass_needle");
+    public static final Identifier ICON_EDITOR = iconTexture("icon_editor");
+    public static final Identifier ICON_DOCS = iconTexture("icon_docs");
+    public static final Identifier ICON_PROBLEMS = iconTexture("icon_problems");
+    public static final Identifier ICON_OUTPUT = iconTexture("icon_output");
+    public static final Identifier ICON_TOOLS = iconTexture("icon_tools");
+    public static final Identifier ICON_ANNOTATION = iconTexture("icon_annotation");
+    public static final Identifier ICON_PIN = iconTexture("icon_pin");
+    public static final Identifier ICON_PIN_ACTIVE = iconTexture("icon_pin_active");
+    public static final Identifier ICON_ARROW_LEFT = iconTexture("icon_arrow_left");
+    public static final Identifier ICON_ARROW_RIGHT = iconTexture("icon_arrow_right");
+    public static final Identifier ICON_RUN = iconTexture("icon_run");
 
-    public static final ResourceLocation ID_BLOCK_IMPULSE = ResourceLocation.parse("command_block_studio:block_impulse");
-    public static final ResourceLocation ID_BLOCK_IMPULSE_FOCUSED = ResourceLocation.parse("command_block_studio:block_impulse_focused");
-    public static final ResourceLocation ID_BLOCK_IMPULSE_CONDITIONAL = ResourceLocation.parse("command_block_studio:block_impulse_conditional");
-    public static final ResourceLocation ID_BLOCK_IMPULSE_CONDITIONAL_FOCUSED = ResourceLocation.parse("command_block_studio:block_impulse_conditional_focused");
-    public static final ResourceLocation ID_BLOCK_CHAIN = ResourceLocation.parse("command_block_studio:block_chain");
-    public static final ResourceLocation ID_BLOCK_CHAIN_FOCUSED = ResourceLocation.parse("command_block_studio:block_chain_focused");
-    public static final ResourceLocation ID_BLOCK_CHAIN_CONDITIONAL = ResourceLocation.parse("command_block_studio:block_chain_conditional");
-    public static final ResourceLocation ID_BLOCK_CHAIN_CONDITIONAL_FOCUSED = ResourceLocation.parse("command_block_studio:block_chain_conditional_focused");
-    public static final ResourceLocation ID_BLOCK_REPEAT = ResourceLocation.parse("command_block_studio:block_repeat");
-    public static final ResourceLocation ID_BLOCK_REPEAT_FOCUSED = ResourceLocation.parse("command_block_studio:block_repeat_focused");
-    public static final ResourceLocation ID_BLOCK_REPEAT_CONDITIONAL = ResourceLocation.parse("command_block_studio:block_repeat_conditional");
-    public static final ResourceLocation ID_BLOCK_REPEAT_CONDITIONAL_FOCUSED = ResourceLocation.parse("command_block_studio:block_repeat_conditional_focused");
-    public static final ResourceLocation ID_BUTTON_IMPULSE_DISABLED = ResourceLocation.parse("command_block_studio:button_impulse_disabled");
-    public static final ResourceLocation ID_BUTTON_IMPULSE_ENABLED = ResourceLocation.parse("command_block_studio:button_impulse_enabled");
-    public static final ResourceLocation ID_BUTTON_IMPULSE_FOCUSED = ResourceLocation.parse("command_block_studio:button_impulse_focused");
-    public static final ResourceLocation ID_BUTTON_CHAIN_DISABLED = ResourceLocation.parse("command_block_studio:button_chain_disabled");
-    public static final ResourceLocation ID_BUTTON_CHAIN_ENABLED = ResourceLocation.parse("command_block_studio:button_chain_enabled");
-    public static final ResourceLocation ID_BUTTON_CHAIN_FOCUSED = ResourceLocation.parse("command_block_studio:button_chain_focused");
-    public static final ResourceLocation ID_BUTTON_REPEAT_DISABLED = ResourceLocation.parse("command_block_studio:button_repeat_disabled");
-    public static final ResourceLocation ID_BUTTON_REPEAT_ENABLED = ResourceLocation.parse("command_block_studio:button_repeat_enabled");
-    public static final ResourceLocation ID_BUTTON_REPEAT_FOCUSED = ResourceLocation.parse("command_block_studio:button_repeat_focused");
-    public static final ResourceLocation ID_BUTTON_COMMAND_DISABLED = ResourceLocation.parse("command_block_studio:button_command_disabled");
-    public static final ResourceLocation ID_BUTTON_COMMAND_ENABLED = ResourceLocation.parse("command_block_studio:button_command_enabled");
-    public static final ResourceLocation ID_BUTTON_COMMAND_FOCUSED = ResourceLocation.parse("command_block_studio:button_command_focused");
-    public static final ResourceLocation ID_BUTTON_OUTPUT_DISABLED = ResourceLocation.parse("command_block_studio:button_output_disabled");
-    public static final ResourceLocation ID_BUTTON_OUTPUT_ENABLED = ResourceLocation.parse("command_block_studio:button_output_enabled");
-    public static final ResourceLocation ID_BUTTON_OUTPUT_FOCUSED = ResourceLocation.parse("command_block_studio:button_output_focused");
-    public static final ResourceLocation ID_BUTTON_POWER_INACTIVE_DISABLED = ResourceLocation.parse("command_block_studio:button_power_inactive_disabled");
-    public static final ResourceLocation ID_BUTTON_POWER_INACTIVE_ENABLED = ResourceLocation.parse("command_block_studio:button_power_inactive_enabled");
-    public static final ResourceLocation ID_BUTTON_POWER_INACTIVE_FOCUSED = ResourceLocation.parse("command_block_studio:button_power_inactive_focused");
-    public static final ResourceLocation ID_BUTTON_POWER_ACTIVE_DISABLED = ResourceLocation.parse("command_block_studio:button_power_active_disabled");
-    public static final ResourceLocation ID_BUTTON_POWER_ACTIVE_ENABLED = ResourceLocation.parse("command_block_studio:button_power_active_enabled");
-    public static final ResourceLocation ID_BUTTON_POWER_ACTIVE_FOCUSED = ResourceLocation.parse("command_block_studio:button_power_active_focused");
-    public static final ResourceLocation ID_BUTTON_IGNORE_OUTPUT_DISABLED = ResourceLocation.parse("command_block_studio:button_ignore_output_disabled");
-    public static final ResourceLocation ID_BUTTON_IGNORE_OUTPUT_ENABLED = ResourceLocation.parse("command_block_studio:button_ignore_output_enabled");
-    public static final ResourceLocation ID_BUTTON_IGNORE_OUTPUT_FOCUSED = ResourceLocation.parse("command_block_studio:button_ignore_output_focused");
-    public static final ResourceLocation ID_BUTTON_TRACK_OUTPUT_DISABLED = ResourceLocation.parse("command_block_studio:button_track_output_disabled");
-    public static final ResourceLocation ID_BUTTON_TRACK_OUTPUT_ENABLED = ResourceLocation.parse("command_block_studio:button_track_output_enabled");
-    public static final ResourceLocation ID_BUTTON_TRACK_OUTPUT_FOCUSED = ResourceLocation.parse("command_block_studio:button_track_output_focused");
-    public static final ResourceLocation ID_BUTTON_UNCONDITIONAL_DISABLED = ResourceLocation.parse("command_block_studio:button_unconditional_disabled");
-    public static final ResourceLocation ID_BUTTON_UNCONDITIONAL_ENABLED = ResourceLocation.parse("command_block_studio:button_unconditional_enabled");
-    public static final ResourceLocation ID_BUTTON_UNCONDITIONAL_FOCUSED = ResourceLocation.parse("command_block_studio:button_unconditional_focused");
-    public static final ResourceLocation ID_BUTTON_CONDITIONAL_DISABLED = ResourceLocation.parse("command_block_studio:button_conditional_disabled");
-    public static final ResourceLocation ID_BUTTON_CONDITIONAL_ENABLED = ResourceLocation.parse("command_block_studio:button_conditional_enabled");
-    public static final ResourceLocation ID_BUTTON_CONDITIONAL_FOCUSED = ResourceLocation.parse("command_block_studio:button_conditional_focused");
-    public static final ResourceLocation ID_SCROLLBAR_HORIZONTAL_DISABLED = ResourceLocation.parse("command_block_studio:scrollbar_horizontal_disabled");
-    public static final ResourceLocation ID_SCROLLBAR_HORIZONTAL_ENABLED = ResourceLocation.parse("command_block_studio:scrollbar_horizontal_enabled");
-    public static final ResourceLocation ID_SCROLLBAR_HORIZONTAL_FOCUSED = ResourceLocation.parse("command_block_studio:scrollbar_horizontal_focused");
-    public static final ResourceLocation ID_SCROLLBAR_VERTICAL_DISABLED = ResourceLocation.parse("command_block_studio:scrollbar_vertical_disabled");
-    public static final ResourceLocation ID_SCROLLBAR_VERTICAL_ENABLED = ResourceLocation.parse("command_block_studio:scrollbar_vertical_enabled");
-    public static final ResourceLocation ID_SCROLLBAR_VERTICAL_FOCUSED = ResourceLocation.parse("command_block_studio:scrollbar_vertical_focused");
-    public static final ResourceLocation ID_SLIDER_PICK_ENABLED = ResourceLocation.parse("command_block_studio:slider_pick_enabled");
-    public static final ResourceLocation ID_SLIDER_PICK_FOCUSED = ResourceLocation.parse("command_block_studio:slider_pick_focused");
+    public static final Identifier ID_BLOCK_IMPULSE = Identifier.parse("command_block_studio:block_impulse");
+    public static final Identifier ID_BLOCK_IMPULSE_FOCUSED = Identifier.parse("command_block_studio:block_impulse_focused");
+    public static final Identifier ID_BLOCK_IMPULSE_CONDITIONAL = Identifier.parse("command_block_studio:block_impulse_conditional");
+    public static final Identifier ID_BLOCK_IMPULSE_CONDITIONAL_FOCUSED = Identifier.parse("command_block_studio:block_impulse_conditional_focused");
+    public static final Identifier ID_BLOCK_CHAIN = Identifier.parse("command_block_studio:block_chain");
+    public static final Identifier ID_BLOCK_CHAIN_FOCUSED = Identifier.parse("command_block_studio:block_chain_focused");
+    public static final Identifier ID_BLOCK_CHAIN_CONDITIONAL = Identifier.parse("command_block_studio:block_chain_conditional");
+    public static final Identifier ID_BLOCK_CHAIN_CONDITIONAL_FOCUSED = Identifier.parse("command_block_studio:block_chain_conditional_focused");
+    public static final Identifier ID_BLOCK_REPEAT = Identifier.parse("command_block_studio:block_repeat");
+    public static final Identifier ID_BLOCK_REPEAT_FOCUSED = Identifier.parse("command_block_studio:block_repeat_focused");
+    public static final Identifier ID_BLOCK_REPEAT_CONDITIONAL = Identifier.parse("command_block_studio:block_repeat_conditional");
+    public static final Identifier ID_BLOCK_REPEAT_CONDITIONAL_FOCUSED = Identifier.parse("command_block_studio:block_repeat_conditional_focused");
+    public static final Identifier ID_BUTTON_IMPULSE_DISABLED = Identifier.parse("command_block_studio:button_impulse_disabled");
+    public static final Identifier ID_BUTTON_IMPULSE_ENABLED = Identifier.parse("command_block_studio:button_impulse_enabled");
+    public static final Identifier ID_BUTTON_IMPULSE_FOCUSED = Identifier.parse("command_block_studio:button_impulse_focused");
+    public static final Identifier ID_BUTTON_CHAIN_DISABLED = Identifier.parse("command_block_studio:button_chain_disabled");
+    public static final Identifier ID_BUTTON_CHAIN_ENABLED = Identifier.parse("command_block_studio:button_chain_enabled");
+    public static final Identifier ID_BUTTON_CHAIN_FOCUSED = Identifier.parse("command_block_studio:button_chain_focused");
+    public static final Identifier ID_BUTTON_REPEAT_DISABLED = Identifier.parse("command_block_studio:button_repeat_disabled");
+    public static final Identifier ID_BUTTON_REPEAT_ENABLED = Identifier.parse("command_block_studio:button_repeat_enabled");
+    public static final Identifier ID_BUTTON_REPEAT_FOCUSED = Identifier.parse("command_block_studio:button_repeat_focused");
+    public static final Identifier ID_BUTTON_COMMAND_DISABLED = Identifier.parse("command_block_studio:button_command_disabled");
+    public static final Identifier ID_BUTTON_COMMAND_ENABLED = Identifier.parse("command_block_studio:button_command_enabled");
+    public static final Identifier ID_BUTTON_COMMAND_FOCUSED = Identifier.parse("command_block_studio:button_command_focused");
+    public static final Identifier ID_BUTTON_OUTPUT_DISABLED = Identifier.parse("command_block_studio:button_output_disabled");
+    public static final Identifier ID_BUTTON_OUTPUT_ENABLED = Identifier.parse("command_block_studio:button_output_enabled");
+    public static final Identifier ID_BUTTON_OUTPUT_FOCUSED = Identifier.parse("command_block_studio:button_output_focused");
+    public static final Identifier ID_BUTTON_POWER_INACTIVE_DISABLED = Identifier.parse("command_block_studio:button_power_inactive_disabled");
+    public static final Identifier ID_BUTTON_POWER_INACTIVE_ENABLED = Identifier.parse("command_block_studio:button_power_inactive_enabled");
+    public static final Identifier ID_BUTTON_POWER_INACTIVE_FOCUSED = Identifier.parse("command_block_studio:button_power_inactive_focused");
+    public static final Identifier ID_BUTTON_POWER_ACTIVE_DISABLED = Identifier.parse("command_block_studio:button_power_active_disabled");
+    public static final Identifier ID_BUTTON_POWER_ACTIVE_ENABLED = Identifier.parse("command_block_studio:button_power_active_enabled");
+    public static final Identifier ID_BUTTON_POWER_ACTIVE_FOCUSED = Identifier.parse("command_block_studio:button_power_active_focused");
+    public static final Identifier ID_BUTTON_IGNORE_OUTPUT_DISABLED = Identifier.parse("command_block_studio:button_ignore_output_disabled");
+    public static final Identifier ID_BUTTON_IGNORE_OUTPUT_ENABLED = Identifier.parse("command_block_studio:button_ignore_output_enabled");
+    public static final Identifier ID_BUTTON_IGNORE_OUTPUT_FOCUSED = Identifier.parse("command_block_studio:button_ignore_output_focused");
+    public static final Identifier ID_BUTTON_TRACK_OUTPUT_DISABLED = Identifier.parse("command_block_studio:button_track_output_disabled");
+    public static final Identifier ID_BUTTON_TRACK_OUTPUT_ENABLED = Identifier.parse("command_block_studio:button_track_output_enabled");
+    public static final Identifier ID_BUTTON_TRACK_OUTPUT_FOCUSED = Identifier.parse("command_block_studio:button_track_output_focused");
+    public static final Identifier ID_BUTTON_UNCONDITIONAL_DISABLED = Identifier.parse("command_block_studio:button_unconditional_disabled");
+    public static final Identifier ID_BUTTON_UNCONDITIONAL_ENABLED = Identifier.parse("command_block_studio:button_unconditional_enabled");
+    public static final Identifier ID_BUTTON_UNCONDITIONAL_FOCUSED = Identifier.parse("command_block_studio:button_unconditional_focused");
+    public static final Identifier ID_BUTTON_CONDITIONAL_DISABLED = Identifier.parse("command_block_studio:button_conditional_disabled");
+    public static final Identifier ID_BUTTON_CONDITIONAL_ENABLED = Identifier.parse("command_block_studio:button_conditional_enabled");
+    public static final Identifier ID_BUTTON_CONDITIONAL_FOCUSED = Identifier.parse("command_block_studio:button_conditional_focused");
+    public static final Identifier ID_SCROLLBAR_HORIZONTAL_DISABLED = Identifier.parse("command_block_studio:scrollbar_horizontal_disabled");
+    public static final Identifier ID_SCROLLBAR_HORIZONTAL_ENABLED = Identifier.parse("command_block_studio:scrollbar_horizontal_enabled");
+    public static final Identifier ID_SCROLLBAR_HORIZONTAL_FOCUSED = Identifier.parse("command_block_studio:scrollbar_horizontal_focused");
+    public static final Identifier ID_SCROLLBAR_VERTICAL_DISABLED = Identifier.parse("command_block_studio:scrollbar_vertical_disabled");
+    public static final Identifier ID_SCROLLBAR_VERTICAL_ENABLED = Identifier.parse("command_block_studio:scrollbar_vertical_enabled");
+    public static final Identifier ID_SCROLLBAR_VERTICAL_FOCUSED = Identifier.parse("command_block_studio:scrollbar_vertical_focused");
+    public static final Identifier ID_SLIDER_PICK_ENABLED = Identifier.parse("command_block_studio:slider_pick_enabled");
+    public static final Identifier ID_SLIDER_PICK_FOCUSED = Identifier.parse("command_block_studio:slider_pick_focused");
 
     public static final WidgetSprites BLOCK_IMPULSE = new WidgetSprites(ID_BLOCK_IMPULSE, ID_BLOCK_IMPULSE_FOCUSED);
     public static final WidgetSprites BLOCK_IMPULSE_CONDITIONAL = new WidgetSprites(ID_BLOCK_IMPULSE_CONDITIONAL, ID_BLOCK_IMPULSE_CONDITIONAL_FOCUSED);
@@ -117,8 +115,8 @@ public class CommandBlockStudio {
     public static final WidgetSprites BLOCK_REPEAT = new WidgetSprites(ID_BLOCK_REPEAT, ID_BLOCK_REPEAT_FOCUSED);
     public static final WidgetSprites BLOCK_REPEAT_CONDITIONAL = new WidgetSprites(ID_BLOCK_REPEAT_CONDITIONAL, ID_BLOCK_REPEAT_CONDITIONAL_FOCUSED);
 
-    private static ResourceLocation iconTexture(String name) {
-        return ResourceLocation.fromNamespaceAndPath(
+    private static Identifier iconTexture(String name) {
+        return Identifier.fromNamespaceAndPath(
                 CommandBlockStudioMod.MODID,
                 "textures/gui/sprites/" + name + ".png"
         );
@@ -298,7 +296,7 @@ public class CommandBlockStudio {
                 "key.cbs.areaselectioninput",
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_SEMICOLON,
-                "key.category.cbs.keybinds");
+                KeyMapping.Category.register(Identifier.parse("command_block_studio:keybinds")));
         event.register(areaSelectionInput);
     }
 
@@ -308,7 +306,7 @@ public class CommandBlockStudio {
         if (areaSelectionInput != null && client.player != null) {
             while (areaSelectionInput.consumeClick()) {
                 boolean startedSelection = AreaSelectionHandler.areaSelectionInput();
-                client.player.displayClientMessage(startedSelection ? Component.translatable("cbs.areaSelection.start") : Component.translatable("cbs.areaSelection.end"), true);
+                client.player.sendSystemMessage(startedSelection ? Component.translatable("cbs.areaSelection.start") : Component.translatable("cbs.areaSelection.end"));
             }
         }
     }

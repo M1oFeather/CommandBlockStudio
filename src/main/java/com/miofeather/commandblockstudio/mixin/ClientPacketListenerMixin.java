@@ -19,7 +19,7 @@ public class ClientPacketListenerMixin {
     public void blockEntityUpdateInject(ClientboundBlockEntityDataPacket packet, CallbackInfo ci){
         BlockPos blockPos = packet.getPos();
         Minecraft client = ((ClientCommonPacketListenerImplAccessor)(Object)this).getMinecraft();
-        if (client.screen instanceof CommandBlockStudioScreen commandScreen && commandScreen.isEditing(blockPos)) {
+        if (client.gui.screen() instanceof CommandBlockStudioScreen commandScreen && commandScreen.isEditing(blockPos)) {
             commandScreen.updateCommandBlock();
         }
     }

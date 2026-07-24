@@ -11,11 +11,12 @@ import com.miofeather.commandblockstudio.main.ui.MultiLineTextFieldWidget;
 import com.miofeather.commandblockstudio.main.ui.SideWindow;
 import com.miofeather.commandblockstudio.main.ui.StudioInsightPanel;
 import com.miofeather.commandblockstudio.main.ui.StudioAnnotationPanel;
+import com.miofeather.commandblockstudio.main.ui.StudioInputEvents;
 import com.miofeather.commandblockstudio.main.ui.StudioIconButton;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.GameNarrator;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.CommandSuggestions;
@@ -31,11 +32,9 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.world.level.BaseCommandBlock;
 import net.minecraft.world.level.block.entity.CommandBlockEntity;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
@@ -43,7 +42,6 @@ import java.util.Optional;
 
 import static com.miofeather.commandblockstudio.main.CommandBlockStudio.*;
 
-@OnlyIn(Dist.CLIENT)
 public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScreen {
     protected enum BottomPanelMode {
         NONE,
@@ -238,7 +236,7 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
     }
 
     private Button createRailButton(
-            net.minecraft.resources.ResourceLocation icon,
+            net.minecraft.resources.Identifier icon,
             String tooltipKey,
             int x,
             int y,
@@ -554,7 +552,7 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
             return;
         }
         EditorSessionState sessionState = captureEditorSession();
-        minecraft.setScreen(new ConfirmScreen(
+        minecraft.gui.setScreen(new ConfirmScreen(
                 restore -> {
                     resumeEditorSession(sessionState);
                     if (restore) {
@@ -644,7 +642,7 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
         }
         if (CONFIRM_UNSAVED_EXIT && wasModified() && minecraft != null) {
             EditorSessionState sessionState = captureEditorSession();
-            minecraft.setScreen(new ConfirmScreen(
+            minecraft.gui.setScreen(new ConfirmScreen(
                     save -> {
                         resumeEditorSession(sessionState);
                         if (save) {
@@ -682,7 +680,7 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
     }
 
     protected final void resumeEditorSession(EditorSessionState sessionState) {
-        minecraft.setScreen(this);
+        minecraft.gui.setScreen(this);
         ((MultiLineTextFieldWidget) consoleCommandTextField).restoreEditorState(
                 sessionState.command(),
                 sessionState.cursor(),
@@ -703,13 +701,13 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
     }
 
     @Override
-    public void resize(Minecraft minecraft, int width, int height) {
+    public void resize(int width, int height) {
         MultiLineTextFieldWidget editor = (MultiLineTextFieldWidget) consoleCommandTextField;
         String value = editor.getValue();
         int cursor = editor.getCursorPosition();
         int highlight = editor.getHighlightPosition();
         boolean modified = editor.wasModified();
-        this.init(minecraft, width, height);
+        this.init(width, height);
         ((MultiLineTextFieldWidget) consoleCommandTextField).restoreEditorState(value, cursor, highlight, modified);
         commandSuggestor.updateCommandInfo();
         setButtonsActive(true);
@@ -724,7 +722,7 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
         configCursorPosition = editor.getCursorPosition();
         configHighlightPosition = editor.getHighlightPosition();
         configCommandModified = editor.wasModified();
-        minecraft.setScreen(new ConfigScreen(this));
+        minecraft.gui.setScreen(new ConfigScreen(this));
     }
 
     public void returnFromConfig() {
@@ -757,7 +755,7 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
         if (sideWindow.isVisible() && sideWindow.mouseClicked(mouseX, mouseY, button)) {
             return true;
         }
-        if (commandSuggestor.isVisible() && commandSuggestor.mouseClicked(mouseX, mouseY, button)) {
+        if (commandSuggestor.isVisible() && commandSuggestor.mouseClicked(StudioInputEvents.mouse(mouseX, mouseY, button))) {
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
@@ -815,18 +813,18 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (Screen.hasControlDown() && keyCode == GLFW.GLFW_KEY_F) {
+        if (Minecraft.getInstance().hasControlDown() && keyCode == GLFW.GLFW_KEY_F) {
             setRightPanelMode(RightPanelMode.TOOLS);
             sideWindow.focusSearch(false);
             return true;
         }
-        if (Screen.hasControlDown() && keyCode == GLFW.GLFW_KEY_H) {
+        if (Minecraft.getInstance().hasControlDown() && keyCode == GLFW.GLFW_KEY_H) {
             setRightPanelMode(RightPanelMode.TOOLS);
             sideWindow.focusSearch(true);
             return true;
         }
         if (keyCode == GLFW.GLFW_KEY_F3 && sideWindow.isVisible()) {
-            return sideWindow.repeatSearch(Screen.hasShiftDown());
+            return sideWindow.repeatSearch(Minecraft.getInstance().hasShiftDown());
         }
         if (annotationPanel.isVisible() && annotationPanel.keyPressed(keyCode, scanCode, modifiers)) {
             return true;
@@ -836,17 +834,17 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
         }
         if (!showOutput && keyCode == GLFW.GLFW_KEY_TAB && !commandSuggestor.isVisible()) {
             MultiLineTextFieldWidget editor = (MultiLineTextFieldWidget) consoleCommandTextField;
-            if (!Screen.hasShiftDown() && editor.acceptSyntaxHint()) {
+            if (!Minecraft.getInstance().hasShiftDown() && editor.acceptSyntaxHint()) {
                 return true;
             }
-            if (editor.selectNextPlaceholder(Screen.hasShiftDown())) {
+            if (editor.selectNextPlaceholder(Minecraft.getInstance().hasShiftDown())) {
                 return true;
             }
         }
-        if (commandSuggestor.keyPressed(keyCode, scanCode, modifiers)) {
+        if (commandSuggestor.keyPressed(StudioInputEvents.key(keyCode, scanCode, modifiers))) {
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_S && Screen.hasControlDown()) {
+        if (keyCode == GLFW.GLFW_KEY_S && Minecraft.getInstance().hasControlDown()) {
             if (((MultiLineTextFieldWidget) consoleCommandTextField).wasModified()) {
                 commit();
             }
@@ -938,25 +936,25 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         // The Studio draws an opaque workbench background before vanilla widgets render.
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         int studioMouseX = studioMouseX(mouseX);
         int studioMouseY = studioMouseY(mouseY);
         beginStudioRender(graphics);
         try {
             renderStudioChrome(graphics);
-            consoleCommandTextField.render(graphics, studioMouseX, studioMouseY, delta);
+            consoleCommandTextField.extractRenderState(graphics, studioMouseX, studioMouseY, delta);
             if (previousOutputTextField.isVisible()) {
-                previousOutputTextField.render(graphics, studioMouseX, studioMouseY, delta);
+                previousOutputTextField.extractRenderState(graphics, studioMouseX, studioMouseY, delta);
             }
-            insightPanel.render(graphics, studioMouseX, studioMouseY, delta);
-            sideWindow.render(graphics, studioMouseX, studioMouseY, delta);
-            annotationPanel.render(graphics, studioMouseX, studioMouseY, delta);
-            super.render(graphics, studioMouseX, studioMouseY, delta);
+            insightPanel.extractRenderState(graphics, studioMouseX, studioMouseY, delta);
+            sideWindow.extractRenderState(graphics, studioMouseX, studioMouseY, delta);
+            annotationPanel.extractRenderState(graphics, studioMouseX, studioMouseY, delta);
+            super.extractRenderState(graphics, studioMouseX, studioMouseY, delta);
             renderRailSelection(graphics);
             renderAsterisk(graphics, toggleTrackingOutputButton, toggleTrackingOutputButton.getValue() != priorState.trackOutput);
             renderTargetOverlay(graphics, studioMouseX, studioMouseY, delta);
@@ -965,22 +963,22 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
         }
     }
 
-    protected void renderTargetOverlay(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    protected void renderTargetOverlay(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
     }
 
-    private void renderStudioChrome(GuiGraphics graphics) {
+    private void renderStudioChrome(GuiGraphicsExtractor graphics) {
         graphics.fill(0, 0, width, height, 0xFF0B0E12);
         graphics.fill(0, 0, width, TOP_BAR_HEIGHT, 0xFF20242A);
         graphics.fill(0, TOP_BAR_HEIGHT, RAIL_WIDTH, height - ACTION_BAR_HEIGHT, 0xFF171A1F);
         graphics.fill(RAIL_WIDTH - 1, TOP_BAR_HEIGHT, RAIL_WIDTH, height - ACTION_BAR_HEIGHT, 0xFF343A42);
         graphics.fill(0, height - ACTION_BAR_HEIGHT, width, height, 0xFF20242A);
 
-        graphics.drawString(font, Component.literal("Command Block Studio").withStyle(ChatFormatting.WHITE), 9, 12, 0xFFF2F4F7);
+        graphics.text(font, Component.literal("Command Block Studio").withStyle(ChatFormatting.WHITE), 9, 12, 0xFFF2F4F7);
         int targetX = getContextControlX(4) + 8;
         int targetWidth = configButton.getX() - targetX - 8;
         if (targetWidth >= 32) {
             String target = font.plainSubstrByWidth(getTargetDescription().getString(), targetWidth);
-            graphics.drawString(font, target, targetX, 12, 0xFF9AA4AF);
+            graphics.text(font, target, targetX, 12, 0xFF9AA4AF);
         }
 
         graphics.fill(editorX, TOP_BAR_HEIGHT + 4, editorX + editorWidth, editorY - 3, 0xFF181C21);
@@ -999,17 +997,17 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
         renderActionStatus(graphics);
     }
 
-    protected void renderEditorHeader(GuiGraphics graphics) {
-        graphics.drawString(font, Component.translatable("cbs.editor.file"), editorX + 7, TOP_BAR_HEIGHT + 10, 0xFFDDE2E7);
+    protected void renderEditorHeader(GuiGraphicsExtractor graphics) {
+        graphics.text(font, Component.translatable("cbs.editor.file"), editorX + 7, TOP_BAR_HEIGHT + 10, 0xFFDDE2E7);
         String length = Component.translatable(
                 "cbs.editor.characters",
                 consoleCommandTextField.getValue().length()
         ).getString();
-        graphics.drawString(font, length, editorX + editorWidth - font.width(length) - 7, TOP_BAR_HEIGHT + 10, 0xFF707A85);
+        graphics.text(font, length, editorX + editorWidth - font.width(length) - 7, TOP_BAR_HEIGHT + 10, 0xFF707A85);
 
     }
 
-    private void renderProblemsPanel(GuiGraphics graphics) {
+    private void renderProblemsPanel(GuiGraphicsExtractor graphics) {
         int contentX = bottomPanelX + 9;
         int contentY = bottomPanelY + 31;
         int textWidth = bottomPanelWidth - 18;
@@ -1052,11 +1050,11 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
 
         List<FormattedCharSequence> lines = font.split(message, textWidth);
         for (int i = 0; i < lines.size() && i < 3; i++) {
-            graphics.drawString(font, lines.get(i), contentX, contentY + i * (font.lineHeight + 2), color);
+            graphics.text(font, lines.get(i), contentX, contentY + i * (font.lineHeight + 2), color);
         }
     }
 
-    private void renderActionStatus(GuiGraphics graphics) {
+    private void renderActionStatus(GuiGraphicsExtractor graphics) {
         int x = RAIL_WIDTH + 7;
         int y = this.height - ACTION_BAR_HEIGHT + 11;
         int rightEdge = doneButton.getX() - 8;
@@ -1091,22 +1089,22 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
         int availableWidth = rightEdge - x;
         String fullStatus = syntax + separator + saved + separator + cursor;
         if (font.width(fullStatus) <= availableWidth) {
-            graphics.drawString(font, syntax, x, y, syntaxColor);
+            graphics.text(font, syntax, x, y, syntaxColor);
             x += font.width(syntax);
-            graphics.drawString(font, separator, x, y, 0xFF68727D);
+            graphics.text(font, separator, x, y, 0xFF68727D);
             x += font.width(separator);
-            graphics.drawString(font, saved, x, y, wasModified() ? 0xFFE3B341 : 0xFFAAB3BD);
+            graphics.text(font, saved, x, y, wasModified() ? 0xFFE3B341 : 0xFFAAB3BD);
             x += font.width(saved);
-            graphics.drawString(font, separator + cursor, x, y, 0xFF808A95);
+            graphics.text(font, separator + cursor, x, y, 0xFF808A95);
             return;
         }
 
         String compactStatus = syntax + separator + saved;
         String visibleStatus = font.plainSubstrByWidth(compactStatus, availableWidth);
-        graphics.drawString(font, visibleStatus, x, y, syntaxColor);
+        graphics.text(font, visibleStatus, x, y, syntaxColor);
     }
 
-    private void renderRailSelection(GuiGraphics graphics) {
+    private void renderRailSelection(GuiGraphicsExtractor graphics) {
         int y;
         if (rightPanelMode == RightPanelMode.DOCS && isQuickDocsVisible()) {
             y = docsRailButton.getY();
@@ -1124,15 +1122,15 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
         graphics.fill(1, y + 2, 3, y + BUTTON_HEIGHT - 2, 0xFF56B6C2);
     }
 
-    protected void renderAsterisk(GuiGraphics graphics, LayoutElement widget, boolean draw) {
+    protected void renderAsterisk(GuiGraphicsExtractor graphics, LayoutElement widget, boolean draw) {
         if (draw) {
             renderAsterisk(graphics, widget.getX() + widget.getWidth(), widget.getY() - 4, true);
         }
     }
 
-    protected void renderAsterisk(GuiGraphics graphics, int x, int y, boolean draw) {
+    protected void renderAsterisk(GuiGraphicsExtractor graphics, int x, int y, boolean draw) {
         if (draw) {
-            graphics.drawString(font, "*", x, y, 0xFFFFC000);
+            graphics.text(font, "*", x, y, 0xFFFFC000);
         }
     }
 }

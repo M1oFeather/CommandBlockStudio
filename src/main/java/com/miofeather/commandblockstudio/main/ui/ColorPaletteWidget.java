@@ -1,8 +1,9 @@
 package com.miofeather.commandblockstudio.main.ui;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
 
@@ -41,7 +42,7 @@ public final class ColorPaletteWidget extends AbstractWidget {
     }
 
     @Override
-    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         int fieldWidth = getFieldWidth();
         int fieldHeight = getHeight();
 
@@ -57,7 +58,7 @@ public final class ColorPaletteWidget extends AbstractWidget {
                     0xFF000000
             );
         }
-        graphics.renderOutline(getX() - 1, getY() - 1, fieldWidth + 2, fieldHeight + 2, 0xFF8B949E);
+        graphics.outline(getX() - 1, getY() - 1, fieldWidth + 2, fieldHeight + 2, 0xFF8B949E);
 
         int hueX = getHueX();
         for (int sampleY = 0; sampleY < fieldHeight; sampleY += SAMPLE_STEP) {
@@ -71,12 +72,12 @@ public final class ColorPaletteWidget extends AbstractWidget {
                     color
             );
         }
-        graphics.renderOutline(hueX - 1, getY() - 1, HUE_BAR_WIDTH + 2, fieldHeight + 2, 0xFF8B949E);
+        graphics.outline(hueX - 1, getY() - 1, HUE_BAR_WIDTH + 2, fieldHeight + 2, 0xFF8B949E);
 
         int selectorX = getX() + Math.round(saturation * Math.max(1, fieldWidth - 1));
         int selectorY = getY() + Math.round((1.0F - brightness) * Math.max(1, fieldHeight - 1));
-        graphics.renderOutline(selectorX - 2, selectorY - 2, 5, 5, 0xFF000000);
-        graphics.renderOutline(selectorX - 1, selectorY - 1, 3, 3, 0xFFFFFFFF);
+        graphics.outline(selectorX - 2, selectorY - 2, 5, 5, 0xFF000000);
+        graphics.outline(selectorX - 1, selectorY - 1, 3, 3, 0xFFFFFFFF);
 
         int hueY = getY() + Math.round(hue * Math.max(1, fieldHeight - 1));
         graphics.fill(hueX - 2, hueY - 1, hueX + HUE_BAR_WIDTH + 2, hueY + 2, 0xFF000000);
@@ -84,8 +85,10 @@ public final class ColorPaletteWidget extends AbstractWidget {
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (!visible || !active || button != 0 || !isMouseOver(mouseX, mouseY)) {
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        double mouseX = event.x();
+        double mouseY = event.y();
+        if (!visible || !active || event.button() != 0 || !isMouseOver(mouseX, mouseY)) {
             return false;
         }
         dragTarget = mouseX >= getHueX() - 2 ? DragTarget.HUE : DragTarget.FIELD;
@@ -95,16 +98,16 @@ public final class ColorPaletteWidget extends AbstractWidget {
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        if (button != 0 || dragTarget == DragTarget.NONE) {
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        if (event.button() != 0 || dragTarget == DragTarget.NONE) {
             return false;
         }
-        updateFromMouse(mouseX, mouseY);
+        updateFromMouse(event.x(), event.y());
         return true;
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+    public boolean mouseReleased(MouseButtonEvent event) {
         boolean handled = dragTarget != DragTarget.NONE;
         dragTarget = DragTarget.NONE;
         return handled;

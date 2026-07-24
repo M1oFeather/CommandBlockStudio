@@ -10,7 +10,7 @@ import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.CommandBlockEntity;
@@ -132,7 +132,7 @@ public final class CommandBlockAnnotationNetwork {
             return;
         }
 
-        boolean executed = commandBlock.getCommandBlock().performCommand(player.serverLevel());
+        boolean executed = commandBlock.getCommandBlock().performCommand(player.level());
         commandBlock.setChanged();
         player.connection.send(ClientboundBlockEntityDataPacket.create(commandBlock, BlockEntity::saveWithoutMetadata));
         context.reply(new RunCommandBlockResult(payload.pos(), true, executed));
@@ -153,7 +153,7 @@ public final class CommandBlockAnnotationNetwork {
         String messageKey = !payload.accepted()
                 ? "cbs.runTest.denied"
                 : payload.executed() ? "cbs.runTest.success" : "cbs.runTest.skipped";
-        context.player().displayClientMessage(net.minecraft.network.chat.Component.translatable(messageKey), true);
+        context.player().sendSystemMessage(net.minecraft.network.chat.Component.translatable(messageKey));
     }
 
     public static CommandVersion captureCommandVersion(ServerPlayer player, BlockPos pos) {
@@ -167,12 +167,10 @@ public final class CommandBlockAnnotationNetwork {
             CommandVersion previousVersion,
             CommandVersion submittedVersion
     ) {
-        if (player.getServer() == null
-                || !player.getServer().isCommandBlockEnabled()
-                || !player.canUseGameMasterBlocks()) {
+        if (player.level().getServer() == null || !player.canUseGameMasterBlocks()) {
             return;
         }
-        BlockEntity blockEntity = player.serverLevel().getBlockEntity(pos);
+        BlockEntity blockEntity = player.level().getBlockEntity(pos);
         if (!(blockEntity instanceof CommandBlockEntity commandBlock)) {
             return;
         }
@@ -187,7 +185,7 @@ public final class CommandBlockAnnotationNetwork {
         if (!history.isEmpty() && history.getFirst().matches(acceptedVersion)) {
             return;
         }
-        String editorName = player.getGameProfile().getName();
+        String editorName = player.getGameProfile().name();
         if (editorName.length() > MAX_EDITOR_NAME_LENGTH) {
             editorName = editorName.substring(0, MAX_EDITOR_NAME_LENGTH);
         }
@@ -222,7 +220,7 @@ public final class CommandBlockAnnotationNetwork {
     private static SyncAnnotation createSyncPayload(BlockPos pos, CommandBlockEntity commandBlock) {
         return new SyncAnnotation(
                 pos,
-                commandBlock.getPersistentData().getString(DATA_KEY),
+                commandBlock.getPersistentData().getStringOr(DATA_KEY, ""),
                 readHistory(commandBlock)
         );
     }
@@ -242,18 +240,18 @@ public final class CommandBlockAnnotationNetwork {
     }
 
     public static Optional<LatestEditInfo> latestEditFromBlockEntityData(CompoundTag blockEntityData) {
-        CompoundTag persistentData = blockEntityData.contains(NEOFORGE_DATA_KEY, Tag.TAG_COMPOUND)
-                ? blockEntityData.getCompound(NEOFORGE_DATA_KEY)
+        CompoundTag persistentData = blockEntityData.contains(NEOFORGE_DATA_KEY)
+                ? blockEntityData.getCompoundOrEmpty(NEOFORGE_DATA_KEY)
                 : blockEntityData;
         return latestEdit(persistentData);
     }
 
     private static Optional<LatestEditInfo> latestEdit(CompoundTag persistentData) {
-        ListTag history = persistentData.getList(HISTORY_KEY, Tag.TAG_COMPOUND);
+        ListTag history = persistentData.getListOrEmpty(HISTORY_KEY);
         for (int i = 0; i < history.size(); i++) {
-            CompoundTag entry = history.getCompound(i);
-            long timestamp = entry.getLong("time");
-            String editor = entry.getString("editor");
+            CompoundTag entry = history.getCompoundOrEmpty(i);
+            long timestamp = entry.getLongOr("time", 0L);
+            String editor = entry.getStringOr("editor", "");
             if (timestamp > 0L || !editor.isBlank()) {
                 return Optional.of(new LatestEditInfo(timestamp, editor));
             }
@@ -262,15 +260,15 @@ public final class CommandBlockAnnotationNetwork {
     }
 
     private static List<EditHistoryEntry> readHistory(CommandBlockEntity commandBlock) {
-        ListTag serializedHistory = commandBlock.getPersistentData().getList(HISTORY_KEY, Tag.TAG_COMPOUND);
+        ListTag serializedHistory = commandBlock.getPersistentData().getListOrEmpty(HISTORY_KEY);
         List<EditHistoryEntry> result = new ArrayList<>(Math.min(serializedHistory.size(), MAX_HISTORY_ENTRIES));
         for (int i = 0; i < serializedHistory.size() && result.size() < MAX_HISTORY_ENTRIES; i++) {
-            CompoundTag entry = serializedHistory.getCompound(i);
-            long timestamp = entry.getLong("time");
-            String editor = entry.getString("editor");
-            boolean snapshotAvailable = entry.contains("command", Tag.TAG_STRING);
+            CompoundTag entry = serializedHistory.getCompoundOrEmpty(i);
+            long timestamp = entry.getLongOr("time", 0L);
+            String editor = entry.getStringOr("editor", "");
+            boolean snapshotAvailable = entry.contains("command");
             if (timestamp > 0L && (!editor.isBlank() || snapshotAvailable)) {
-                String command = entry.getString("command");
+                String command = entry.getStringOr("command", "");
                 if (command.length() > MAX_COMMAND_LENGTH) {
                     command = command.substring(0, MAX_COMMAND_LENGTH);
                 }
@@ -279,10 +277,10 @@ public final class CommandBlockAnnotationNetwork {
                         editor,
                         snapshotAvailable,
                         command,
-                        readMode(entry.getString("mode")),
-                        entry.getBoolean("track_output"),
-                        entry.getBoolean("conditional"),
-                        entry.getBoolean("automatic")
+                        readMode(entry.getStringOr("mode", "")),
+                        entry.getBooleanOr("track_output", false),
+                        entry.getBooleanOr("conditional", false),
+                        entry.getBooleanOr("automatic", false)
                 ));
             }
         }
@@ -311,7 +309,7 @@ public final class CommandBlockAnnotationNetwork {
         if (!player.canUseGameMasterBlocks() || player.blockPosition().distSqr(pos) > MAX_EDIT_DISTANCE_SQUARED) {
             return null;
         }
-        BlockEntity blockEntity = player.serverLevel().getBlockEntity(pos);
+        BlockEntity blockEntity = player.level().getBlockEntity(pos);
         return blockEntity instanceof CommandBlockEntity commandBlock ? commandBlock : null;
     }
 
@@ -592,7 +590,7 @@ public final class CommandBlockAnnotationNetwork {
         }
     }
 
-    private static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(CommandBlockStudioMod.MODID, path);
+    private static Identifier id(String path) {
+        return Identifier.fromNamespaceAndPath(CommandBlockStudioMod.MODID, path);
     }
 }

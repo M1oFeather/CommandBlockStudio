@@ -17,6 +17,7 @@
     "CommandSuggestorAccessor",
     "MinecraftMixin",
     "ParticleEngineAccessor",
+    "ParticleResourcesAccessor",
     "ScreenAccessor",
     "ServerPlayerAccessor",
     "SuggestionWindowAccessor",

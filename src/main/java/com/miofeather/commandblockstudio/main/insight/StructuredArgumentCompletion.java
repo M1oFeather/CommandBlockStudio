@@ -8,7 +8,7 @@ import com.mojang.brigadier.context.StringRange;
 import com.mojang.brigadier.context.SuggestionContext;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
-import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.BuiltInRegistries;
 
@@ -52,7 +52,7 @@ final class StructuredArgumentCompletion {
     static Optional<CommandSyntaxHint> findHint(
             String command,
             int cursor,
-            ParseResults<SharedSuggestionProvider> parse
+            ParseResults<ClientSuggestionProvider> parse
     ) {
         if (parse == null || command.isBlank() || cursor < 0 || cursor > command.length()) {
             return Optional.empty();
@@ -70,7 +70,7 @@ final class StructuredArgumentCompletion {
     static Optional<CommandInsight> describeCursor(
             String command,
             int cursor,
-            ParseResults<SharedSuggestionProvider> parse
+            ParseResults<ClientSuggestionProvider> parse
     ) {
         if (parse == null || command.isBlank() || cursor < 0 || cursor > command.length()) {
             return Optional.empty();
@@ -89,7 +89,7 @@ final class StructuredArgumentCompletion {
             String command,
             int cursor,
             String suggestion,
-            ParseResults<SharedSuggestionProvider> parse
+            ParseResults<ClientSuggestionProvider> parse
     ) {
         if (parse == null || suggestion == null || suggestion.isBlank()) {
             return Optional.empty();
@@ -121,10 +121,10 @@ final class StructuredArgumentCompletion {
     private static Optional<ArgumentContext> findArgumentContext(
             String command,
             int cursor,
-            ParseResults<SharedSuggestionProvider> parse
+            ParseResults<ClientSuggestionProvider> parse
     ) {
         ArgumentContext parsedBest = null;
-        for (ParsedCommandNode<SharedSuggestionProvider> parsedNode : flattenNodes(parse.getContext())) {
+        for (ParsedCommandNode<ClientSuggestionProvider> parsedNode : flattenNodes(parse.getContext())) {
             ArgumentKind kind = argumentKind(parsedNode.getNode());
             StringRange range = parsedNode.getRange();
             if (kind != null && cursor >= range.getStart() && cursor <= range.getEnd()) {
@@ -138,13 +138,13 @@ final class StructuredArgumentCompletion {
         }
 
         try {
-            SuggestionContext<SharedSuggestionProvider> suggestionContext =
+            SuggestionContext<ClientSuggestionProvider> suggestionContext =
                     parse.getContext().findSuggestionContext(cursor);
-            List<CommandNode<SharedSuggestionProvider>> children = new ArrayList<>(suggestionContext.parent.getChildren());
+            List<CommandNode<ClientSuggestionProvider>> children = new ArrayList<>(suggestionContext.parent.getChildren());
             if (suggestionContext.parent.getRedirect() != null) {
                 children.addAll(suggestionContext.parent.getRedirect().getChildren());
             }
-            for (CommandNode<SharedSuggestionProvider> child : children) {
+            for (CommandNode<ClientSuggestionProvider> child : children) {
                 ArgumentKind kind = argumentKind(child);
                 if (kind != null) {
                     int start = skipWhitespace(command, Math.min(suggestionContext.startPos, cursor), cursor);
@@ -155,13 +155,13 @@ final class StructuredArgumentCompletion {
         }
 
         int previousEnd = 0;
-        for (ParsedCommandNode<SharedSuggestionProvider> node : flattenNodes(parse.getContext())) {
+        for (ParsedCommandNode<ClientSuggestionProvider> node : flattenNodes(parse.getContext())) {
             if (node.getRange().getEnd() <= cursor) {
                 previousEnd = Math.max(previousEnd, node.getRange().getEnd());
             }
         }
         int estimatedStart = skipWhitespace(command, previousEnd, cursor);
-        for (Map.Entry<CommandNode<SharedSuggestionProvider>, com.mojang.brigadier.exceptions.CommandSyntaxException> failure
+        for (Map.Entry<CommandNode<ClientSuggestionProvider>, com.mojang.brigadier.exceptions.CommandSyntaxException> failure
                 : parse.getExceptions().entrySet()) {
             ArgumentKind kind = argumentKind(failure.getKey());
             int failureCursor = failure.getValue().getCursor();
@@ -173,7 +173,7 @@ final class StructuredArgumentCompletion {
         return Optional.empty();
     }
 
-    private static ArgumentKind argumentKind(CommandNode<SharedSuggestionProvider> node) {
+    private static ArgumentKind argumentKind(CommandNode<ClientSuggestionProvider> node) {
         if (!(node instanceof ArgumentCommandNode<?, ?> argumentNode)) {
             return null;
         }
@@ -596,7 +596,7 @@ final class StructuredArgumentCompletion {
                     DataComponentType<?> type = entry.getValue();
                     return type != null && !type.isTransient();
                 })
-                .map(entry -> entry.getKey().location().toString())
+                .map(entry -> entry.getKey().identifier().toString())
                 .sorted()
                 .toList();
     }
@@ -869,11 +869,11 @@ final class StructuredArgumentCompletion {
         return index;
     }
 
-    private static List<ParsedCommandNode<SharedSuggestionProvider>> flattenNodes(
-            CommandContextBuilder<SharedSuggestionProvider> context
+    private static List<ParsedCommandNode<ClientSuggestionProvider>> flattenNodes(
+            CommandContextBuilder<ClientSuggestionProvider> context
     ) {
-        List<ParsedCommandNode<SharedSuggestionProvider>> nodes = new ArrayList<>();
-        CommandContextBuilder<SharedSuggestionProvider> current = context;
+        List<ParsedCommandNode<ClientSuggestionProvider>> nodes = new ArrayList<>();
+        CommandContextBuilder<ClientSuggestionProvider> current = context;
         while (current != null) {
             nodes.addAll(current.getNodes());
             current = current.getChild();

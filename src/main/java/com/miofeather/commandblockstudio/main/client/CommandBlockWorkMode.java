@@ -1,15 +1,11 @@
 package com.miofeather.commandblockstudio.main.client;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.miofeather.commandblockstudio.main.network.CommandBlockAnnotationNetwork;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -19,14 +15,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.CommandBlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraft.world.phys.Vec3;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
-import org.joml.Matrix4f;
 import org.lwjgl.glfw.GLFW;
 
 import java.time.Instant;
@@ -36,12 +28,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-@OnlyIn(Dist.CLIENT)
 public final class CommandBlockWorkMode {
     private static final long REFRESH_INTERVAL_MILLIS = 1_000L;
     private static final int PANEL_TEXT_WIDTH = 210;
     private static final int MAX_COMMAND_LINES = 8;
-    private static final float HOLOGRAM_SCALE = 0.014F;
     private static final DateTimeFormatter EDIT_TIME_FORMAT = DateTimeFormatter.ofPattern("MM-dd HH:mm")
             .withZone(ZoneId.systemDefault());
 
@@ -60,9 +50,9 @@ public final class CommandBlockWorkMode {
             enabled = !enabled;
             Minecraft client = Minecraft.getInstance();
             if (client.player != null) {
-                client.player.displayClientMessage(Component.translatable(
+                client.player.sendSystemMessage(Component.translatable(
                         enabled ? "cbs.workMode.enabled" : "cbs.workMode.disabled"
-                ).withStyle(enabled ? ChatFormatting.AQUA : ChatFormatting.GRAY), true);
+                ).withStyle(enabled ? ChatFormatting.AQUA : ChatFormatting.GRAY));
             }
         }
         return true;
@@ -78,7 +68,7 @@ public final class CommandBlockWorkMode {
     @SubscribeEvent
     public void onClientTick(ClientTickEvent.Post event) {
         Minecraft client = Minecraft.getInstance();
-        if (!enabled || client.player == null || client.level == null || client.screen != null) {
+        if (!enabled || client.player == null || client.level == null || client.gui.screen() != null) {
             clearTarget();
             return;
         }
@@ -118,12 +108,9 @@ public final class CommandBlockWorkMode {
     }
 
     @SubscribeEvent
-    public void renderWorldProjection(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
-            return;
-        }
+    public void renderWorldProjection(RenderGuiEvent.Post event) {
         Minecraft client = Minecraft.getInstance();
-        if (!enabled || target == null || client.screen != null || client.options.hideGui) {
+        if (!enabled || target == null || client.gui.screen() != null || client.gui.hud.isHidden()) {
             return;
         }
 
@@ -131,46 +118,19 @@ public final class CommandBlockWorkMode {
         List<ProjectedLine> lines = buildProjectionLines(font);
         int panelWidth = Math.max(116, lines.stream().mapToInt(line -> font.width(line.text())).max().orElse(100) + 16);
         int panelHeight = lines.size() * 10 + 12;
-        float left = -panelWidth / 2.0F;
-        float top = -panelHeight / 2.0F;
-
-        Vec3 cameraPosition = event.getCamera().getPosition();
-        Vec3 faceOffset = Vec3.atLowerCornerOf(targetFace.getNormal()).scale(0.68D);
-        Vec3 anchor = Vec3.atCenterOf(target).add(faceOffset).add(0.0D, 1.05D, 0.0D);
-        PoseStack pose = event.getPoseStack();
-        pose.pushPose();
-        pose.translate(anchor.x - cameraPosition.x, anchor.y - cameraPosition.y, anchor.z - cameraPosition.z);
-        pose.mulPose(event.getCamera().rotation());
-        pose.scale(HOLOGRAM_SCALE, -HOLOGRAM_SCALE, HOLOGRAM_SCALE);
-
-        Matrix4f matrix = pose.last().pose();
-        MultiBufferSource.BufferSource buffers = client.renderBuffers().bufferSource();
-        VertexConsumer background = buffers.getBuffer(RenderType.textBackgroundSeeThrough());
+        GuiGraphicsExtractor graphics = event.getGuiGraphics();
+        int left = graphics.guiWidth() - panelWidth - 12;
+        int top = Math.max(12, (graphics.guiHeight() - panelHeight) / 2);
         int accent = accentColor(preview);
-        addPanelQuad(background, matrix, left, top, left + panelWidth, top + panelHeight, 0xD91A1F25);
-        addPanelQuad(background, matrix, left, top, left + 3.0F, top + panelHeight, accent);
-        addPanelQuad(background, matrix, left, top, left + panelWidth, top + 1.0F, accent);
-        addPanelQuad(background, matrix, left, top + panelHeight - 1.0F, left + panelWidth, top + panelHeight, accent);
-        addPanelQuad(background, matrix, left + panelWidth - 1.0F, top, left + panelWidth, top + panelHeight, accent);
+        graphics.fill(left, top, left + panelWidth, top + panelHeight, 0xD91A1F25);
+        graphics.fill(left, top, left + 3, top + panelHeight, accent);
+        graphics.outline(left, top, panelWidth, panelHeight, accent);
 
-        float lineY = top + 7.0F;
+        int lineY = top + 7;
         for (ProjectedLine line : lines) {
-            font.drawInBatch(
-                    line.text(),
-                    left + 8.0F,
-                    lineY,
-                    line.color(),
-                    false,
-                    matrix,
-                    buffers,
-                    Font.DisplayMode.SEE_THROUGH,
-                    0,
-                    LightTexture.FULL_BRIGHT
-            );
-            lineY += 10.0F;
+            graphics.text(font, line.text(), left + 8, lineY, line.color(), false);
+            lineY += 10;
         }
-        buffers.endBatch();
-        pose.popPose();
     }
 
     private List<ProjectedLine> buildProjectionLines(Font font) {
@@ -217,21 +177,6 @@ public final class CommandBlockWorkMode {
             lines.add(new ProjectedLine(edited.getVisualOrderText(), 0xFF707A85));
         }
         return lines;
-    }
-
-    private static void addPanelQuad(
-            VertexConsumer consumer,
-            Matrix4f matrix,
-            float left,
-            float top,
-            float right,
-            float bottom,
-            int color
-    ) {
-        consumer.addVertex(matrix, left, bottom, 0.01F).setColor(color).setLight(LightTexture.FULL_BRIGHT);
-        consumer.addVertex(matrix, right, bottom, 0.01F).setColor(color).setLight(LightTexture.FULL_BRIGHT);
-        consumer.addVertex(matrix, right, top, 0.01F).setColor(color).setLight(LightTexture.FULL_BRIGHT);
-        consumer.addVertex(matrix, left, top, 0.01F).setColor(color).setLight(LightTexture.FULL_BRIGHT);
     }
 
     private static Optional<TargetedCommandBlock> pointedCommandBlock(Minecraft client) {

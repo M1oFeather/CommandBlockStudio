@@ -151,7 +151,7 @@ final class CommandElementDescriptions {
             entry("BlockPredicateArgument", "A block predicate or block tag.", "方块谓词或方块标签。"),
             entry("ItemArgument", "An item id with registry-backed data-component keys, value templates, and nested text Component completion.", "物品 id；支持注册表数据组件键、值模板，以及嵌套文本 Component 补全。"),
             entry("ItemPredicateArgument", "An item predicate used to match stacks.", "用于匹配物品堆的物品谓词。"),
-            entry("ResourceLocationArgument", "A namespaced resource location.", "带命名空间的资源位置。"),
+            entry("IdentifierArgument", "A namespaced resource location.", "带命名空间的资源位置。"),
             entry("ResourceArgument", "A registry resource from the active server.", "当前服务器注册表中的资源。"),
             entry("ResourceKeyArgument", "A resource key from a registry.", "注册表中的资源键。"),
             entry("ResourceOrTagArgument", "A registry resource or resource tag.", "注册表资源或资源标签。"),

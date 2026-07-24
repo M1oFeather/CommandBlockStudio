@@ -3,18 +3,20 @@ package com.miofeather.commandblockstudio.main.ui;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 
 import net.minecraft.client.gui.components.WidgetSprites;
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.components.AbstractWidget;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderPipelines;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 
 import static com.miofeather.commandblockstudio.main.CommandBlockStudio.SCROLLBAR_HORIZONTAL;
@@ -43,7 +45,7 @@ public class ScrollbarWidget extends AbstractWidget {
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         if (!this.visible) {
             return;
         }
@@ -53,36 +55,36 @@ public class ScrollbarWidget extends AbstractWidget {
         this.renderSlider(graphics, mouseX, mouseY, delta);
     }
 
-    protected void renderFrame(GuiGraphics graphics){
+    protected void renderFrame(GuiGraphicsExtractor graphics){
         renderLongBox(graphics, false, false, 0, horizontal ? width : height, frameRepeatLength);
     }
 
-    protected void renderSlider(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    protected void renderSlider(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         renderLongBox(graphics, true, isHovered, (int)(pos * (length - barLength)), barLength, barRepeatLength);
     }
 
-    protected void renderLongBox(GuiGraphics graphics, boolean enabled, boolean hovered, int position, int boxLength, int repeatLength){
+    protected void renderLongBox(GuiGraphicsExtractor graphics, boolean enabled, boolean hovered, int position, int boxLength, int repeatLength){
         int thickness = currentThickness();
         if(horizontal){
-            ResourceLocation textures = SCROLLBAR_HORIZONTAL.get(enabled,hovered);
+            Identifier textures = SCROLLBAR_HORIZONTAL.get(enabled,hovered);
             int drawY = this.getY() + this.height - thickness;
             int sourceY = 10 - thickness;
-            graphics.blitSprite( textures, textureLength, 10, 0, sourceY, this.getX() + position, drawY, Math.min(boxLength / 2, textureLength / 2), thickness);
-            graphics.blitSprite( textures, textureLength, 10, Math.max(textureLength/2, textureLength - boxLength / 2), sourceY, Math.max(this.getX() + position + boxLength/2, this.getX() + position + boxLength - textureLength/2), drawY, Math.min(boxLength / 2, textureLength / 2), thickness);
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, textures, textureLength, 10, 0, sourceY, this.getX() + position, drawY, Math.min(boxLength / 2, textureLength / 2), thickness);
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, textures, textureLength, 10, Math.max(textureLength/2, textureLength - boxLength / 2), sourceY, Math.max(this.getX() + position + boxLength/2, this.getX() + position + boxLength - textureLength/2), drawY, Math.min(boxLength / 2, textureLength / 2), thickness);
             int drawX = this.getX() + position + textureLength/2;
             for (int i=0; i<(repeatLength/(textureLength/2))+1; i++){
-                graphics.blitSprite( textures, textureLength, 10, textureLength/4, sourceY, drawX, drawY, Math.min((repeatLength - i*textureLength/2), textureLength/2), thickness);
+                graphics.blitSprite(RenderPipelines.GUI_TEXTURED, textures, textureLength, 10, textureLength/4, sourceY, drawX, drawY, Math.min((repeatLength - i*textureLength/2), textureLength/2), thickness);
                 drawX += textureLength/2;
             }
         } else {
-            ResourceLocation textures = SCROLLBAR_VERTICAL.get(enabled,hovered);
+            Identifier textures = SCROLLBAR_VERTICAL.get(enabled,hovered);
             int drawX = this.getX() + this.width - thickness;
             int sourceX = 10 - thickness;
-            graphics.blitSprite( textures, 10 , textureLength, sourceX, 0, drawX, this.getY() + position, thickness, Math.min(boxLength / 2, textureLength / 2));
-            graphics.blitSprite( textures, 10 , textureLength, sourceX, Math.max(textureLength/2, textureLength - boxLength / 2), drawX, Math.max(this.getY() + position + boxLength/2, this.getY() + position + boxLength - textureLength/2), thickness, Math.min(boxLength / 2, textureLength / 2));
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, textures, 10 , textureLength, sourceX, 0, drawX, this.getY() + position, thickness, Math.min(boxLength / 2, textureLength / 2));
+            graphics.blitSprite(RenderPipelines.GUI_TEXTURED, textures, 10 , textureLength, sourceX, Math.max(textureLength/2, textureLength - boxLength / 2), drawX, Math.max(this.getY() + position + boxLength/2, this.getY() + position + boxLength - textureLength/2), thickness, Math.min(boxLength / 2, textureLength / 2));
             int drawY = this.getY() + textureLength/2;
             for (int i=0; i<(repeatLength/(textureLength/2))+1; i++){
-                graphics.blitSprite( textures, 10, textureLength, sourceX, textureLength/4, drawX, drawY, thickness, Math.min((repeatLength - i*textureLength/2), textureLength/2));
+                graphics.blitSprite(RenderPipelines.GUI_TEXTURED, textures, 10, textureLength, sourceX, textureLength/4, drawX, drawY, thickness, Math.min((repeatLength - i*textureLength/2), textureLength/2));
                 drawY += textureLength/2;
             }
         }
@@ -118,9 +120,8 @@ public class ScrollbarWidget extends AbstractWidget {
         }
     }
 
-    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (this.visible && this.isValidClickButton(button) && this.isTrackHovered(mouseX, mouseY)) {
+        if (this.visible && button == 0 && this.isTrackHovered(mouseX, mouseY)) {
             this.playDownSound(Minecraft.getInstance().getSoundManager());
             this.onClick(mouseX, mouseY, button);
             return true;
@@ -128,7 +129,6 @@ public class ScrollbarWidget extends AbstractWidget {
         return false;
     }
 
-    @Override
     public void onClick(double mouseX, double mouseY, int button) {
         if (!this.visible) {
             return;
@@ -148,7 +148,6 @@ public class ScrollbarWidget extends AbstractWidget {
         prevMouseY = mouseY;
     }
 
-    @Override
     public void onRelease(double mouseX, double mouseY) {
         if (!this.visible) {
             return;
@@ -156,7 +155,6 @@ public class ScrollbarWidget extends AbstractWidget {
         dragging = false;
     }
 
-    @Override
     public void onDrag(double mouseX, double mouseY, double distX, double distY){
         if(dragging) {
             int travel = length - barLength;
@@ -229,9 +227,33 @@ public class ScrollbarWidget extends AbstractWidget {
         return super.mouseScrolled(mouseX, mouseY, horizontalAmount, verticalAmount);
     }
 
-    @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        return super.charTyped(codePoint, modifiers);
+        return super.charTyped(new CharacterEvent(codePoint));
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        return mouseClicked(event.x(), event.y(), event.button());
+    }
+
+    @Override
+    public void onClick(MouseButtonEvent event, boolean doubleClick) {
+        onClick(event.x(), event.y(), event.button());
+    }
+
+    @Override
+    public void onRelease(MouseButtonEvent event) {
+        onRelease(event.x(), event.y());
+    }
+
+    @Override
+    protected void onDrag(MouseButtonEvent event, double deltaX, double deltaY) {
+        onDrag(event.x(), event.y(), deltaX, deltaY);
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent event) {
+        return charTyped((char) event.codepoint(), 0);
     }
 
     @Override

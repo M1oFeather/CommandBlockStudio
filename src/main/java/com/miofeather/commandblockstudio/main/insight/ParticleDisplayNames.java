@@ -1,7 +1,7 @@
 package com.miofeather.commandblockstudio.main.insight;
 
 import com.miofeather.commandblockstudio.main.CommandBlockStudio;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 
 import java.util.Map;
 
@@ -121,7 +121,7 @@ public final class ParticleDisplayNames {
     private ParticleDisplayNames() {
     }
 
-    public static String get(ResourceLocation id) {
+    public static String get(Identifier id) {
         if (CommandBlockStudio.useChineseCommandInsight()) {
             String translated = "minecraft".equals(id.getNamespace()) ? CHINESE.get(id.getPath()) : null;
             if (translated != null) {

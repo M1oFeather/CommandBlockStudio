@@ -14,11 +14,14 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.SharedConstants;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.renderer.RenderPipelines;
 
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipPositioner;
 import net.minecraft.client.gui.components.EditBox;
 
@@ -31,7 +34,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.ChatFormatting;
 import net.minecraft.util.StringUtil;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import org.joml.Vector2i;
 import org.lwjgl.glfw.GLFW;
 //import org.eclipse.tm4e.core.grammar.IToken;
@@ -138,7 +141,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
     }
 
     @Override
-    public void renderWidget(final GuiGraphics graphics, int mouseX, int mouseY, float delta){
+    public void extractWidgetRenderState(final GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta){
         timeSinceClick += delta/20.0f;
         visibleStatusDiagnostic = null;
         int color;
@@ -186,8 +189,8 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
             this.drawRawText(graphics, accessor.getValue(), this.getX() + 5, this.getY() + 5, color);
         }
 
-        scrollX.render(graphics, mouseX, mouseY, delta);
-        scrollY.render(graphics, mouseX, mouseY, delta);
+        scrollX.extractRenderState(graphics, mouseX, mouseY, delta);
+        scrollY.extractRenderState(graphics, mouseX, mouseY, delta);
 
         if(!hasCommandSuggestor) {
             graphics.disableScissor();
@@ -236,7 +239,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
                     if (renderVerticalCursor) {
                         graphics.fill(x1, y - 1, x1 + 1, y + 1 + accessor.getFont().lineHeight, -3092272);
                     } else {
-                        graphics.drawString(accessor.getFont(), "_", x1, y, -3092272);
+                        graphics.text(accessor.getFont(), "_", x1, y, -3092272);
                     }
                 }
             }
@@ -251,7 +254,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
             } else {
                 x2 += getTextViewportWidth();
             }
-            graphics.fill(RenderType.guiTextHighlight(), x1, y, x2, y + 10, -16776961);
+            graphics.fill(RenderPipelines.GUI_TEXT_HIGHLIGHT, x1, y, x2, y + 10, -16776961);
         }
 
         renderMatchingBrackets(graphics);
@@ -262,7 +265,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         renderHoverInsight(graphics, mouseX, mouseY);
     }
 
-    private void renderLineGutter(GuiGraphics graphics) {
+    private void renderLineGutter(GuiGraphicsExtractor graphics) {
         int gutterRight = getTextLeft() - 3;
         graphics.fill(getX() + 1, getY() + 1, gutterRight, getTextViewportBottom(), 0xFF11151A);
         graphics.fill(gutterRight, getY() + 1, gutterRight + 1, getTextViewportBottom(), 0xFF30363D);
@@ -292,7 +295,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
 
             String number = Integer.toString(i + 1);
             int numberColor = error ? 0xFFFF7B72 : selected ? 0xFFFFD866 : 0xFF68727D;
-            graphics.drawString(
+            graphics.text(
                     accessor.getFont(),
                     number,
                     gutterRight - accessor.getFont().width(number) - 3,
@@ -337,7 +340,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         return Math.max(getEditorOverlayTop() + 1, getTextViewportBottom() - 3);
     }
 
-    private void renderInlineSuggestion(GuiGraphics graphics) {
+    private void renderInlineSuggestion(GuiGraphicsExtractor graphics) {
         String completion = accessor.getSuggestion();
         boolean syntaxHint = false;
         if ((completion == null || completion.isEmpty()) && hasCommandSuggestor && suggestor != null) {
@@ -368,10 +371,10 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         }
 
         String visibleCompletion = accessor.getFont().plainSubstrByWidth(completion, availableWidth);
-        graphics.drawString(accessor.getFont(), visibleCompletion, x, y, syntaxHint ? 0xFF68737D : 0xFF777777);
+        graphics.text(accessor.getFont(), visibleCompletion, x, y, syntaxHint ? 0xFF68737D : 0xFF777777);
     }
 
-    private void renderMatchingBrackets(GuiGraphics graphics) {
+    private void renderMatchingBrackets(GuiGraphicsExtractor graphics) {
         if (!this.isFocused() || accessor.getCursorPos() != accessor.getHighlightPos() || bracketPartners.length == 0) {
             return;
         }
@@ -396,7 +399,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         return index >= 0 && index < bracketPartners.length && bracketPartners[index] != -2;
     }
 
-    private void renderBracketMarker(GuiGraphics graphics, int index, int color) {
+    private void renderBracketMarker(GuiGraphicsExtractor graphics, int index, int color) {
         Pair<Integer, Integer> location = indexToLineAndOffset(index);
         int lineIndex = location.getA();
         if (lineIndex < scrolledLines || lineIndex >= scrolledLines + visibleLines || lineIndex >= lines.size()) {
@@ -417,13 +420,13 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         graphics.fill(x, y + accessor.getFont().lineHeight - 1, x + characterWidth, y + accessor.getFont().lineHeight, color);
     }
 
-    private void renderSuggestor(GuiGraphics graphics, int mouseX, int mouseY){
+    private void renderSuggestor(GuiGraphicsExtractor graphics, int mouseX, int mouseY){
         if(suggestor.getY() > getY() + getHeight() || suggestor.getY() < getY()) return;
         if(suggestor.getX() > getX() + getWidth() || suggestor.getX() < getX()) return;
-        suggestor.render(graphics, mouseX, mouseY);
+        suggestor.extractRenderState(graphics, mouseX, mouseY);
     }
 
-    private void renderCursorInsight(GuiGraphics graphics) {
+    private void renderCursorInsight(GuiGraphicsExtractor graphics) {
         if (!hasCommandSuggestor || suggestor == null || accessor.getValue().isBlank() || usesDockedInsightPanel()) {
             return;
         }
@@ -465,11 +468,11 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         renderStatusBar(graphics, text, false);
     }
 
-    private void renderStatusBar(GuiGraphics graphics, String text, boolean error) {
+    private void renderStatusBar(GuiGraphicsExtractor graphics, String text, boolean error) {
         renderStatusBar(graphics, text, error, null);
     }
 
-    private void renderStatusBar(GuiGraphics graphics, String text, boolean error, CommandDiagnostic diagnostic) {
+    private void renderStatusBar(GuiGraphicsExtractor graphics, String text, boolean error, CommandDiagnostic diagnostic) {
         Font textRenderer = accessor.getFont();
         int x1 = this.getX() + 1;
         int x2 = this.getX() + this.getWidth() - 1;
@@ -495,17 +498,17 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         }
 
         graphics.fill(x1, y1, x2, y2, error ? 0xFF251216 : 0xFF10141A);
-        graphics.renderOutline(x1, y1, x2 - x1, y2 - y1, error ? 0xFFE05252 : 0xFF3BAFDA);
+        graphics.outline(x1, y1, x2 - x1, y2 - y1, error ? 0xFFE05252 : 0xFF3BAFDA);
         int color = error ? 0xFFFFD7D7 : 0xFFE6F3FF;
-        graphics.drawString(textRenderer, visibleText, x1 + 4, y1 + 3, color);
+        graphics.text(textRenderer, visibleText, x1 + 4, y1 + 3, color);
         if (diagnostic != null) {
             graphics.fill(statusBarX1, statusBarY1, statusBarX2, statusBarY2, 0xFF3A1A20);
-            graphics.renderOutline(statusBarX1, statusBarY1, statusBarX2 - statusBarX1, statusBarY2 - statusBarY1, 0xFFE05252);
-            graphics.drawCenteredString(textRenderer, "↪", (statusBarX1 + statusBarX2) / 2, statusBarY1 + 3, 0xFFFFE2E2);
+            graphics.outline(statusBarX1, statusBarY1, statusBarX2 - statusBarX1, statusBarY2 - statusBarY1, 0xFFE05252);
+            graphics.centeredText(textRenderer, "↪", (statusBarX1 + statusBarX2) / 2, statusBarY1 + 3, 0xFFFFE2E2);
         }
     }
 
-    private void renderHoverInsight(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderHoverInsight(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         if (!hasCommandSuggestor || suggestor == null || accessor.getValue().isBlank()
                 || showCommandSuggestions() || usesDockedInsightPanel()) {
             return;
@@ -538,13 +541,13 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         renderEditorTooltip(graphics, insight.get().toTooltipLines(), mouseX, mouseY);
     }
 
-    void renderEditorTooltip(GuiGraphics graphics, List<Component> components, int mouseX, int mouseY) {
+    void renderEditorTooltip(GuiGraphicsExtractor graphics, List<Component> components, int mouseX, int mouseY) {
         TooltipAnchor anchor = getTooltipAnchor(mouseX, mouseY);
         renderEditorTooltip(graphics, components, anchor.x(), anchor.belowLineY(), mouseX, mouseY);
     }
 
     void renderEditorTooltip(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             List<Component> components,
             int preferredX,
             int preferredY,
@@ -576,7 +579,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
             );
             return new Vector2i(x, y);
         };
-        graphics.renderTooltip(accessor.getFont(), lines, positioner, mouseX, mouseY);
+        graphics.setTooltipForNextFrame(accessor.getFont(), lines, mouseX, mouseY);
     }
 
     private TooltipAnchor getTooltipAnchor(int mouseX, int mouseY) {
@@ -606,7 +609,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
     private record TooltipAnchor(int x, int belowLineY, int lineY) {
     }
 
-    private void drawColoredLine(GuiGraphics graphics, String content, int x, int y, int lineIndex){
+    private void drawColoredLine(GuiGraphicsExtractor graphics, String content, int x, int y, int lineIndex){
         if (content.isEmpty()) {
             return;
         }
@@ -643,7 +646,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
             }
             if (i == content.length() || color != runColor) {
                 String run = content.substring(runStart, i);
-                graphics.drawString(textRenderer, run, x + renderOffset, y, runColor);
+                graphics.text(textRenderer, run, x + renderOffset, y, runColor);
                 renderOffset += textRenderer.width(run);
                 runStart = i;
                 runColor = color;
@@ -651,11 +654,11 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         }
     }
 
-    private void drawRawText(GuiGraphics graphics, String content, int x, int y, int color){
+    private void drawRawText(GuiGraphicsExtractor graphics, String content, int x, int y, int color){
         Font textRenderer = accessor.getFont();
         String line = content.substring(Math.max(Math.min(horizontalOffset, content.length() - 1),0));
         String trimmedLine = textRenderer.plainSubstrByWidth(line, getTextViewportWidth());
-        graphics.drawString(textRenderer, trimmedLine, x, y, color);
+        graphics.text(textRenderer, trimmedLine, x, y, color);
     }
 
     private int pointToIndex(double x, double y){
@@ -809,7 +812,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         if (directDelete) {
             beginHistoryEdit(EditKind.DELETE, false);
         }
-        if (Screen.hasControlDown()) {
+        if (Minecraft.getInstance().hasControlDown()) {
             this.deleteWords(offset);
         } else {
             this.deleteChars(offset);
@@ -920,7 +923,6 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         this.moveCursorTo(j, false);
     }
 
-    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         
         if(keyCode == 340){
@@ -934,8 +936,8 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
             return false;
         }
 
-        if (keyCode == GLFW.GLFW_KEY_SPACE && Screen.hasControlDown() && accessor.getIsEditable()) {
-            if (Screen.hasShiftDown() && insertCommandTemplate()) {
+        if (keyCode == GLFW.GLFW_KEY_SPACE && Minecraft.getInstance().hasControlDown() && accessor.getIsEditable()) {
+            if (Minecraft.getInstance().hasShiftDown() && insertCommandTemplate()) {
                 return true;
             }
             if (hasCommandSuggestor && suggestor != null) {
@@ -944,29 +946,29 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
             }
         }
 
-        if (accessor.getIsEditable() && Screen.hasControlDown() && keyCode == GLFW.GLFW_KEY_Z) {
-            return Screen.hasShiftDown() ? redoEdit() : undoEdit();
+        if (accessor.getIsEditable() && Minecraft.getInstance().hasControlDown() && keyCode == GLFW.GLFW_KEY_Z) {
+            return Minecraft.getInstance().hasShiftDown() ? redoEdit() : undoEdit();
         }
-        if (accessor.getIsEditable() && Screen.hasControlDown() && keyCode == GLFW.GLFW_KEY_Y) {
+        if (accessor.getIsEditable() && Minecraft.getInstance().hasControlDown() && keyCode == GLFW.GLFW_KEY_Y) {
             return redoEdit();
         }
 
-        if (Screen.isSelectAll(keyCode)) {
-            this.moveCursorToEnd(Screen.hasShiftDown());
+        if ((Minecraft.getInstance().hasControlDown() && keyCode == GLFW.GLFW_KEY_A)) {
+            this.moveCursorToEnd(Minecraft.getInstance().hasShiftDown());
             this.setHighlightPos(0);
             return true;
         }
-        if (Screen.isCopy(keyCode)) {
+        if ((Minecraft.getInstance().hasControlDown() && keyCode == GLFW.GLFW_KEY_C)) {
             Minecraft.getInstance().keyboardHandler.setClipboard(this.getHighlighted());
             return true;
         }
-        if (Screen.isPaste(keyCode)) {
+        if ((Minecraft.getInstance().hasControlDown() && keyCode == GLFW.GLFW_KEY_V)) {
             if (accessor.getIsEditable()) {
                 this.insertText(Minecraft.getInstance().keyboardHandler.getClipboard());
             }
             return true;
         }
-        if (Screen.isCut(keyCode)) {
+        if ((Minecraft.getInstance().hasControlDown() && keyCode == GLFW.GLFW_KEY_X)) {
             Minecraft.getInstance().keyboardHandler.setClipboard(this.getHighlighted());
             if (accessor.getIsEditable()) {
                 this.insertText("");
@@ -975,12 +977,12 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         }
         switch (keyCode) {
             case 263: {
-                if (Screen.hasControlDown()) {
-                    //this.setCursor(this.getWordSkipPosition(-1), Screen.hasShiftDown());
-                    this.moveCursorTo(getCursorPosition() + getWordLength(-1), Screen.hasShiftDown());
+                if (Minecraft.getInstance().hasControlDown()) {
+                    //this.setCursor(this.getWordSkipPosition(-1), Minecraft.getInstance().hasShiftDown());
+                    this.moveCursorTo(getCursorPosition() + getWordLength(-1), Minecraft.getInstance().hasShiftDown());
                     updateScrollPositions();
                 } else {
-                    this.moveCursor(-1, Screen.hasShiftDown());
+                    this.moveCursor(-1, Minecraft.getInstance().hasShiftDown());
                 }
                 return true;
             }
@@ -993,12 +995,12 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
                 return true;
             }
             case 262: {
-                if (Screen.hasControlDown()) {
-                    //this.setCursor(this.getWordSkipPosition(1), Screen.hasShiftDown());
-                    this.moveCursorTo(getCursorPosition() + getWordLength(1), Screen.hasShiftDown());
+                if (Minecraft.getInstance().hasControlDown()) {
+                    //this.setCursor(this.getWordSkipPosition(1), Minecraft.getInstance().hasShiftDown());
+                    this.moveCursorTo(getCursorPosition() + getWordLength(1), Minecraft.getInstance().hasShiftDown());
                     updateScrollPositions();
                 } else {
-                    this.moveCursor(1, Screen.hasShiftDown());
+                    this.moveCursor(1, Minecraft.getInstance().hasShiftDown());
                 }
                 return true;
             }
@@ -1015,19 +1017,19 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
                 return true;
             }
             case GLFW.GLFW_KEY_HOME: {
-                if (Screen.hasControlDown()) {
-                    this.moveCursorToStart(Screen.hasShiftDown());
+                if (Minecraft.getInstance().hasControlDown()) {
+                    this.moveCursorToStart(Minecraft.getInstance().hasShiftDown());
                 } else {
-                    this.moveCursorToVisualLineBoundary(false, Screen.hasShiftDown());
+                    this.moveCursorToVisualLineBoundary(false, Minecraft.getInstance().hasShiftDown());
                 }
                 updateScrollPositions();
                 return true;
             }
             case GLFW.GLFW_KEY_END: {
-                if (Screen.hasControlDown()) {
-                    this.moveCursorToEnd(Screen.hasShiftDown());
+                if (Minecraft.getInstance().hasControlDown()) {
+                    this.moveCursorToEnd(Minecraft.getInstance().hasShiftDown());
                 } else {
-                    this.moveCursorToVisualLineBoundary(true, Screen.hasShiftDown());
+                    this.moveCursorToVisualLineBoundary(true, Minecraft.getInstance().hasShiftDown());
                 }
                 updateScrollPositions();
                 return true;
@@ -1168,7 +1170,6 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         return null;
     }
 
-    @Override
     public boolean keyReleased(int keyCode, int scanCode, int modifiers) {
         
         if(keyCode == 340){
@@ -1177,10 +1178,9 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         if(keyCode == 344){
             RShiftPressed = false;
         }
-        return super.keyReleased(keyCode, scanCode, modifiers);
+        return super.keyReleased(new KeyEvent(keyCode, scanCode, modifiers));
     }
 
-    @Override
     public boolean charTyped(char codePoint, int modifiers) {
         if (!this.canConsumeInput()) {
             return false;
@@ -1197,6 +1197,31 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
             return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        return keyPressed(event.key(), event.scancode(), event.modifiers());
+    }
+
+    @Override
+    public boolean keyReleased(KeyEvent event) {
+        return keyReleased(event.key(), event.scancode(), event.modifiers());
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent event) {
+        return charTyped((char) event.codepoint(), 0);
+    }
+
+    @Override
+    public void onClick(MouseButtonEvent event, boolean doubleClick) {
+        onClick(event.x(), event.y(), event.button());
+    }
+
+    @Override
+    public void onRelease(MouseButtonEvent event) {
+        onRelease(event.x(), event.y());
     }
 
     private boolean typePairedCharacter(char codePoint) {
@@ -1359,7 +1384,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
             beginHistoryEdit(EditKind.OTHER, true);
         }
         accessor.setTextVariable(value);
-        this.moveCursorToEnd(Screen.hasShiftDown());
+        this.moveCursorToEnd(Minecraft.getInstance().hasShiftDown());
         this.setHighlightPos(accessor.getCursorPos());
         this.onChanged(value, true);
         this.updateScrollPositions();
@@ -1720,7 +1745,6 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         return mouseX >= (double) this.getX() && mouseX < (double)(this.getX() + this.width) && mouseY >= (double) this.getY() && mouseY < (double)(this.getY() + this.height);
     }
 
-    @Override
     public void onClick(double mouseX, double mouseY, int button){
         if (!this.isVisible()) {
             return;
@@ -1746,10 +1770,10 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         }
         if(this.isFocused() && hovered && mouseY < getTextViewportBottom() && button == 0) {
             int clickedIndex = pointToIndex(mouseX, mouseY);
-            boolean handledNumber = !Screen.hasShiftDown() && handleNumberClick(clickedIndex);
+            boolean handledNumber = !Minecraft.getInstance().hasShiftDown() && handleNumberClick(clickedIndex);
             if (!handledNumber) {
                 clearClickedNumber();
-                this.moveCursorTo(clickedIndex, Screen.hasShiftDown());
+                this.moveCursorTo(clickedIndex, Minecraft.getInstance().hasShiftDown());
             }
             cursorPosPreference = new Pair<>((int)mouseX, (int)mouseY);
             if(!handledNumber && timeSinceClick < 0.25f){
@@ -1828,7 +1852,6 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         scrollY.mouseMoved(mouseX, mouseY);
     }
 
-    @Override
     public void onDrag(double mouseX, double mouseY, double offsetX, double offsetY){
         if (!this.isVisible()) {
             return;
@@ -1847,12 +1870,16 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
     }
 
     @Override
+    protected void onDrag(MouseButtonEvent event, double offsetX, double offsetY) {
+        onDrag(event.x(), event.y(), offsetX, offsetY);
+    }
+
     public void onRelease(double mouseX, double mouseY){
         if (!this.isVisible()) {
             return;
         }
-        scrollX.mouseReleased(mouseX, mouseY, 0);
-        scrollY.mouseReleased(mouseX, mouseY, 0);
+        scrollX.onRelease(mouseX, mouseY);
+        scrollY.onRelease(mouseX, mouseY);
     }
 
     private void moveCursorVertical(int delta){
@@ -1860,7 +1887,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         int yPreference = getY() + 5 + (lineAndOffset.getA() - scrolledLines) * 10;
         cursorPosPreference.setB(yPreference + delta * 10);
         int index = pointToIndex(cursorPosPreference.getA(), cursorPosPreference.getB());
-        moveCursorTo(index, Screen.hasShiftDown());
+        moveCursorTo(index, Minecraft.getInstance().hasShiftDown());
 
         updateScrollPositions();
     }

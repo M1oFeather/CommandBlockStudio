@@ -2,7 +2,7 @@ package com.miofeather.commandblockstudio.main.ui.screen;
 
 import com.miofeather.commandblockstudio.main.ui.MultiLineTextFieldWidget;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.vehicle.MinecartCommandBlock;
+import net.minecraft.world.entity.vehicle.minecart.MinecartCommandBlock;
 import net.minecraft.network.protocol.game.ServerboundSetCommandMinecartPacket;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.BaseCommandBlock;

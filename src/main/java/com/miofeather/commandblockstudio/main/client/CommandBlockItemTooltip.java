@@ -7,9 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.CustomData;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
+import net.minecraft.world.item.component.TypedEntityData;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
 
@@ -17,7 +15,6 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-@OnlyIn(Dist.CLIENT)
 public final class CommandBlockItemTooltip {
     private static final int COMMAND_PREVIEW_LENGTH = 120;
     private static final DateTimeFormatter EDIT_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")
@@ -29,13 +26,13 @@ public final class CommandBlockItemTooltip {
         if (!isCommandBlock(stack)) {
             return;
         }
-        CustomData blockEntityData = stack.get(DataComponents.BLOCK_ENTITY_DATA);
-        if (blockEntityData == null || blockEntityData.isEmpty()) {
+        TypedEntityData<?> blockEntityData = stack.get(DataComponents.BLOCK_ENTITY_DATA);
+        if (blockEntityData == null) {
             return;
         }
 
-        CompoundTag tag = blockEntityData.copyTag();
-        String command = normalizeCommand(tag.getString("Command"));
+        CompoundTag tag = blockEntityData.copyTagWithoutId();
+        String command = normalizeCommand(tag.getStringOr("Command", ""));
         if (!command.isBlank()) {
             event.getToolTip().add(Component.empty());
             event.getToolTip().add(Component.translatable(

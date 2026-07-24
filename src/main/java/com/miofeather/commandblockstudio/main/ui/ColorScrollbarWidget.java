@@ -1,15 +1,9 @@
 package com.miofeather.commandblockstudio.main.ui;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
-import net.minecraft.client.renderer.RenderType;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.network.chat.Component;
-import org.joml.AxisAngle4d;
-import org.joml.Matrix4f;
-import org.joml.Quaternionf;
 
 public class ColorScrollbarWidget extends ScrollbarWidget{
     int color;
@@ -26,16 +20,16 @@ public class ColorScrollbarWidget extends ScrollbarWidget{
     }
 
     @Override
-    protected void renderFrame(GuiGraphics graphics){
-        graphics.pose().pushPose();
-        graphics.pose().translate(getX() + getWidth() / 2.0f, getY() + getHeight() / 2.0f, 0.0f);
-        graphics.pose().mulPose(new Quaternionf().rotateZ((float) (0.5f * Math.PI)));
+    protected void renderFrame(GuiGraphicsExtractor graphics){
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(getX() + getWidth() / 2.0f, getY() + getHeight() / 2.0f);
+        graphics.pose().rotate((float) (0.5f * Math.PI));
         graphics.fillGradient(-getHeight()/2, -getWidth()/2, getHeight()/2, getWidth()/2, color, 0xFF000000);
-        graphics.pose().popPose();
+        graphics.pose().popMatrix();
     }
 
     @Override
-    protected void renderSlider(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    protected void renderSlider(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         boolean highlighted = (this.checkHovered(mouseX, mouseY) || this.dragging);
         int posX = this.getX() + (int)(pos * (length - barLength));
         int posY = this.getY();
@@ -51,7 +45,7 @@ public class ColorScrollbarWidget extends ScrollbarWidget{
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (this.isValidClickButton(button) && this.checkHovered(mouseX, mouseY)) {
+        if (button == 0 && this.checkHovered(mouseX, mouseY)) {
             this.playDownSound(Minecraft.getInstance().getSoundManager());
             this.onClick(mouseX, mouseY, button);
             return true;

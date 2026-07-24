@@ -7,9 +7,7 @@ import com.miofeather.commandblockstudio.main.ui.CyclingTexturedButtonWidget;
 import com.miofeather.commandblockstudio.main.ui.MultiLineTextFieldWidget;
 import com.miofeather.commandblockstudio.main.ui.StudioIconButton;
 import com.miofeather.commandblockstudio.main.util.Pair;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -18,6 +16,7 @@ import net.minecraft.world.level.block.CommandBlock;
 import net.minecraft.world.level.block.entity.CommandBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.input.MouseButtonEvent;
 
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.Button;
@@ -48,7 +47,6 @@ import static net.minecraft.world.level.block.entity.CommandBlockEntity.Mode.RED
 import static net.minecraft.world.level.block.entity.CommandBlockEntity.Mode.SEQUENCE;
 import static net.minecraft.world.level.block.entity.CommandBlockEntity.Mode.AUTO;
 
-@OnlyIn(Dist.CLIENT)
 public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
     private static final int MAX_GROUP_MEMBERS_PER_TAB = 6;
     private static final int MAX_DISCOVERED_GROUP_BLOCKS = 24;
@@ -636,7 +634,7 @@ public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
         }
         if (!AUTOSAVE && CONFIRM_UNSAVED_EXIT && wasModified()) {
             EditorSessionState sessionState = captureEditorSession();
-            minecraft.setScreen(new ConfirmScreen(
+            minecraft.gui.setScreen(new ConfirmScreen(
                     save -> {
                         resumeEditorSession(sessionState);
                         if (save) {
@@ -664,7 +662,7 @@ public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
                 && client.getConnection().hasChannel(CommandBlockAnnotationNetwork.RequestOpenCommandBlock.TYPE)) {
             BlockEntity target = client.level.getBlockEntity(position);
             if (target instanceof CommandBlockEntity commandBlock) {
-                client.setScreen(new CommandBlockStudioScreen(
+                client.gui.setScreen(new CommandBlockStudioScreen(
                         client,
                         commandBlock,
                         commandBlock.getCommandBlock(),
@@ -853,7 +851,7 @@ public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
     }
 
     @Override
-    protected void renderTargetOverlay(final GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    protected void renderTargetOverlay(final GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         renderAsterisk(graphics, modeButton, modeButton.getValue() != priorState.type);
         renderAsterisk(graphics, conditionalModeButton, conditionalModeButton.getValue() != priorState.conditional);
         renderAsterisk(graphics, redstoneTriggerButton, redstoneTriggerButton.getValue() != priorState.needsRedstone);
@@ -873,12 +871,12 @@ public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
                         previousOutputTextField.getY() + previousOutputTextField.getHeight(),
                         0x8F000000);
             }
-            graphics.drawCenteredString(font, Component.translatable("cbs.chain.tooFar"), width/2, height/2, 0xFFA0A0A0);
+            graphics.centeredText(font, Component.translatable("cbs.chain.tooFar"), width/2, height/2, 0xFFA0A0A0);
         }
     }
 
     @Override
-    protected void renderEditorHeader(GuiGraphics graphics) {
+    protected void renderEditorHeader(GuiGraphicsExtractor graphics) {
         // Command-block targets use the editor header as an IDE-style workspace tab strip.
     }
 
@@ -935,7 +933,7 @@ public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
             int background = current
                     ? 0xFF242A31
                     : isHoveredOrFocused() ? 0xFF20262D : 0xFF181C21;
@@ -956,7 +954,7 @@ public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
                 case PINNED -> 0xFFFFD866;
             };
             String label = font.plainSubstrByWidth(getMessage().getString(), Math.max(1, getWidth() - 11));
-            graphics.drawCenteredString(font, label, getX() + getWidth() / 2 + 1, getY() + 5, textColor);
+            graphics.centeredText(font, label, getX() + getWidth() / 2 + 1, getY() + 5, textColor);
         }
     }
 
@@ -973,8 +971,8 @@ public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
         }
 
         @Override
-        public void onClick(double mouseX, double mouseY, int button) {
-            int member = memberAt(mouseX);
+        public void onClick(MouseButtonEvent event, boolean doubleClick) {
+            int member = memberAt(event.x());
             if (member < 0 || member >= model.targets().size()) {
                 return;
             }
@@ -985,7 +983,7 @@ public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
         }
 
         @Override
-        protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+        protected void extractContents(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
             boolean currentGroup = model.contains(current);
             boolean chainGroup = model.kind() == TabKind.CURRENT_CHAIN_GROUP || model.kind() == TabKind.GROUP_CHAIN;
             int background = currentGroup ? 0xFF242A31 : isHoveredOrFocused() ? 0xFF20262D : 0xFF181C21;
@@ -1043,12 +1041,12 @@ public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
                 } catch (IllegalArgumentException ignored) {
                     sprites = BLOCK_IMPULSE;
                 }
-                graphics.blitSprite(sprites.get(true, hovered), iconX, iconY, iconSize, iconSize);
+                graphics.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, sprites.get(true, hovered), iconX, iconY, iconSize, iconSize);
 
                 String order = Integer.toString(index + 1);
                 int orderX = iconX + iconSize - font.width(order);
                 int orderY = iconY + iconSize - 8;
-                graphics.drawString(font, order, orderX, orderY, 0xFFFFFFFF, true);
+                graphics.text(font, order, orderX, orderY, 0xFFFFFFFF, true);
                 if (index + 1 < count) {
                     graphics.fill(cellRight - 1, getY() + 3, cellRight, getY() + getHeight() - 3, 0xFF46505A);
                 }

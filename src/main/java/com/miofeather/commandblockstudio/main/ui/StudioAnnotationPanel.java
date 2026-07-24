@@ -2,7 +2,7 @@ package com.miofeather.commandblockstudio.main.ui;
 
 import com.miofeather.commandblockstudio.main.network.CommandBlockAnnotationNetwork;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.MultiLineEditBox;
 import net.minecraft.network.chat.Component;
@@ -70,15 +70,16 @@ public final class StudioAnnotationPanel {
         int editorHeight = historyVisible
                 ? Mth.clamp(Math.min(height / 3, height - HISTORY_LAYOUT_RESERVE), MIN_HISTORY_EDITOR_HEIGHT, 100)
                 : Math.max(MIN_EDITOR_HEIGHT, height - editorTop - CHARACTER_COUNTER_SPACE - SAVE_ROW_HEIGHT - 2);
-        this.editor = new MultiLineEditBox(
-                font,
-                x + 7,
-                y + editorTop,
-                Math.max(64, width - 14),
-                editorHeight,
-                Component.translatable("cbs.annotation.placeholder"),
-                Component.translatable("cbs.annotation.title")
-        );
+        this.editor = MultiLineEditBox.builder()
+                .setX(x + 7)
+                .setY(y + editorTop)
+                .setPlaceholder(Component.translatable("cbs.annotation.placeholder"))
+                .build(
+                        font,
+                        Math.max(64, width - 14),
+                        editorHeight,
+                        Component.translatable("cbs.annotation.title")
+                );
         this.editor.setCharacterLimit(CommandBlockAnnotationNetwork.MAX_ANNOTATION_LENGTH);
         this.saveButton = Button.builder(Component.translatable("cbs.annotation.save"), button -> save())
                 .bounds(
@@ -150,7 +151,7 @@ public final class StudioAnnotationPanel {
         saveButton.active = false;
     }
 
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         if (!visible) {
             return;
         }
@@ -158,16 +159,16 @@ public final class StudioAnnotationPanel {
         graphics.fill(x, y, x + width, y + 23, 0xFF1C2026);
         graphics.fill(x, y, x + 2, y + height, 0xFF343A42);
         graphics.fill(x, y + 22, x + width, y + 23, 0xFF2A3037);
-        graphics.drawString(font, Component.translatable("cbs.annotation.title"), x + 8, y + 7, 0xFFE8EAED);
-        editor.render(graphics, mouseX, mouseY, delta);
-        saveButton.render(graphics, mouseX, mouseY, delta);
+        graphics.text(font, Component.translatable("cbs.annotation.title"), x + 8, y + 7, 0xFFE8EAED);
+        editor.extractRenderState(graphics, mouseX, mouseY, delta);
+        saveButton.extractRenderState(graphics, mouseX, mouseY, delta);
         Component state = Component.translatable(status.translationKey);
         int available = Math.max(20, saveButton.getX() - x - 15);
-        graphics.drawString(font, font.plainSubstrByWidth(state.getString(), available), x + 8, saveButton.getY() + 5, status.color);
+        graphics.text(font, font.plainSubstrByWidth(state.getString(), available), x + 8, saveButton.getY() + 5, status.color);
         renderHistory(graphics, mouseX, mouseY, delta);
     }
 
-    private void renderHistory(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    private void renderHistory(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         if (!historyVisible) {
             return;
         }
@@ -178,11 +179,11 @@ public final class StudioAnnotationPanel {
                 CommandBlockAnnotationNetwork.MAX_HISTORY_ENTRIES
         );
         int titleWidth = Math.max(20, restoreButton.getX() - x - 13);
-        graphics.drawString(font, font.plainSubstrByWidth(title.getString(), titleWidth), x + 8, historyHeaderY, 0xFFDDE2E7);
-        restoreButton.render(graphics, mouseX, mouseY, delta);
+        graphics.text(font, font.plainSubstrByWidth(title.getString(), titleWidth), x + 8, historyHeaderY, 0xFFDDE2E7);
+        restoreButton.extractRenderState(graphics, mouseX, mouseY, delta);
 
         if (history.isEmpty()) {
-            graphics.drawString(
+            graphics.text(
                     font,
                     Component.translatable("cbs.annotation.history.empty"),
                     x + 8,
@@ -209,7 +210,7 @@ public final class StudioAnnotationPanel {
             }
             CommandBlockAnnotationNetwork.EditHistoryEntry entry = history.get(index);
             String time = HISTORY_TIME_FORMAT.format(Instant.ofEpochMilli(entry.timestamp()));
-            graphics.drawString(font, time, x + 11, rowY + 3, 0xFF8A949E);
+            graphics.text(font, time, x + 11, rowY + 3, 0xFF8A949E);
             int editorX = x + 10 + font.width("00-00 00:00") + 7;
             String editorName = entry.editor().isBlank()
                     ? Component.translatable("cbs.annotation.history.initial").getString()
@@ -218,13 +219,13 @@ public final class StudioAnnotationPanel {
                 editorName += " · " + Component.translatable("cbs.annotation.history.current").getString();
             }
             editorName = font.plainSubstrByWidth(editorName, Math.max(20, x + width - 10 - editorX));
-            graphics.drawString(font, editorName, editorX, rowY + 3, 0xFFE6EDF3);
+            graphics.text(font, editorName, editorX, rowY + 3, 0xFFE6EDF3);
 
             String commandSummary = entry.snapshotAvailable()
                     ? entry.command().replace('\n', ' ').replace('\r', ' ')
                     : Component.translatable("cbs.annotation.history.unavailable").getString();
             commandSummary = font.plainSubstrByWidth(commandSummary, Math.max(20, width - 24));
-            graphics.drawString(
+            graphics.text(
                     font,
                     commandSummary,
                     x + 11,
@@ -238,10 +239,10 @@ public final class StudioAnnotationPanel {
         if (!visible) {
             return false;
         }
-        if (restoreButton.mouseClicked(mouseX, mouseY, button)) {
+        if (restoreButton.mouseClicked(StudioInputEvents.mouse(mouseX, mouseY, button), false)) {
             return true;
         }
-        if (saveButton.mouseClicked(mouseX, mouseY, button)) {
+        if (saveButton.mouseClicked(StudioInputEvents.mouse(mouseX, mouseY, button), false)) {
             return true;
         }
         if (historyVisible
@@ -255,7 +256,7 @@ public final class StudioAnnotationPanel {
                 return true;
             }
         }
-        if (editor.mouseClicked(mouseX, mouseY, button)) {
+        if (editor.mouseClicked(StudioInputEvents.mouse(mouseX, mouseY, button), false)) {
             editor.setFocused(true);
             return true;
         }
@@ -264,16 +265,16 @@ public final class StudioAnnotationPanel {
     }
 
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY) {
-        return visible && editor.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+        return visible && editor.mouseDragged(StudioInputEvents.mouse(mouseX, mouseY, button), deltaX, deltaY);
     }
 
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if (!visible) {
             return false;
         }
-        boolean handled = editor.mouseReleased(mouseX, mouseY, button);
-        handled = saveButton.mouseReleased(mouseX, mouseY, button) || handled;
-        return restoreButton.mouseReleased(mouseX, mouseY, button) || handled;
+        boolean handled = editor.mouseReleased(StudioInputEvents.mouse(mouseX, mouseY, button));
+        handled = saveButton.mouseReleased(StudioInputEvents.mouse(mouseX, mouseY, button)) || handled;
+        return restoreButton.mouseReleased(StudioInputEvents.mouse(mouseX, mouseY, button)) || handled;
     }
 
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
@@ -318,11 +319,11 @@ public final class StudioAnnotationPanel {
     }
 
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        return visible && editor.isFocused() && editor.keyPressed(keyCode, scanCode, modifiers);
+        return visible && editor.isFocused() && editor.keyPressed(StudioInputEvents.key(keyCode, scanCode, modifiers));
     }
 
     public boolean charTyped(char codePoint, int modifiers) {
-        return visible && editor.isFocused() && editor.charTyped(codePoint, modifiers);
+        return visible && editor.isFocused() && editor.charTyped(StudioInputEvents.character(codePoint));
     }
 
     private void save() {

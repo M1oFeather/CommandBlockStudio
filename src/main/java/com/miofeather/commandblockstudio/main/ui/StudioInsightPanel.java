@@ -8,7 +8,7 @@ import com.miofeather.commandblockstudio.main.insight.ParticleDisplayNames;
 import com.miofeather.commandblockstudio.main.ui.screen.StudioScaledScreen;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Renderable;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
@@ -91,7 +91,7 @@ public final class StudioInsightPanel implements Renderable {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!visible) {
             return;
         }
@@ -99,7 +99,7 @@ public final class StudioInsightPanel implements Renderable {
         graphics.fill(x, y, x + width, y + height, 0xFF16191E);
         graphics.fill(x, y, x + 2, y + height, 0xFF343A42);
         graphics.fill(x, y + 22, x + width, y + 23, 0xFF2A3037);
-        graphics.drawString(font, Component.translatable("cbs.panel.docs"), x + 8, y + 7, 0xFFE8EAED);
+        graphics.text(font, Component.translatable("cbs.panel.docs"), x + 8, y + 7, 0xFFE8EAED);
 
         Optional<CommandInsight> resolved = resolveCachedInsight();
         Optional<MultiLineCommandSuggestor.ParticlePreview> particlePreview = suggestor.getSelectedParticlePreview();
@@ -145,7 +145,7 @@ public final class StudioInsightPanel implements Renderable {
         for (int i = 0; i < wrapped.size(); i++) {
             int lineY = contentTop + i * lineHeight - scrollOffset;
             if (lineY + lineHeight >= contentTop && lineY < contentBottom) {
-                graphics.drawString(font, wrapped.get(i), x + 8, lineY, 0xFFE8EAED);
+                graphics.text(font, wrapped.get(i), x + 8, lineY, 0xFFE8EAED);
             }
         }
         graphics.disableScissor();
@@ -163,11 +163,11 @@ public final class StudioInsightPanel implements Renderable {
                 Component.translatable("cbs.panel.docs.shortcut").getString(),
                 width - 16
         );
-        graphics.drawString(font, shortcut, x + 8, y + height - 12, 0xFF8A949E);
+        graphics.text(font, shortcut, x + 8, y + height - 12, 0xFF8A949E);
     }
 
     private void renderParticlePreview(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             MultiLineCommandSuggestor.ParticlePreview preview,
             int previewY
     ) {
@@ -175,22 +175,22 @@ public final class StudioInsightPanel implements Renderable {
         int spriteX = x + 8;
         int spriteY = previewY + 4;
         graphics.fill(x + 5, previewY, x + width - 5, previewY + 49, 0xFF101419);
-        graphics.renderOutline(spriteX - 1, spriteY - 1, previewSize + 2, previewSize + 2, 0xFF343A42);
+        graphics.outline(spriteX - 1, spriteY - 1, previewSize + 2, previewSize + 2, 0xFF343A42);
         if (preview.sprite() != null) {
-            graphics.blit(spriteX, spriteY, 0, previewSize, previewSize, preview.sprite());
+            graphics.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, preview.sprite(), spriteX, spriteY, previewSize, previewSize);
         } else {
             MultiLineCommandSuggestor.renderFallbackParticle(graphics, preview.id(), spriteX, spriteY, previewSize);
         }
         int labelX = spriteX + previewSize + 8;
         int labelWidth = Math.max(20, x + width - 8 - labelX);
-        graphics.drawString(
+        graphics.text(
                 font,
                 font.plainSubstrByWidth(ParticleDisplayNames.get(preview.id()), labelWidth),
                 labelX,
                 previewY + 8,
                 0xFF56B6C2
         );
-        graphics.drawString(
+        graphics.text(
                 font,
                 font.plainSubstrByWidth(preview.id().toString(), labelWidth),
                 labelX,

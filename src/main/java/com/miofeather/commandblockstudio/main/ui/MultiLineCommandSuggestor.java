@@ -16,20 +16,23 @@ import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.CommandSuggestions;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.input.MouseButtonInfo;
 import net.minecraft.client.renderer.Rect2i;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
 import net.minecraft.network.chat.Style;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
@@ -62,7 +65,7 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
     }
 
     @Override
-    public void render(final GuiGraphics graphics, int mouseX, int mouseY) {
+    public void extractRenderState(final GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         if (accessor.getSuggestions() != null) {
             SuggestionWindowAccessor window = (SuggestionWindowAccessor) accessor.getSuggestions();
             if (prepareSuggestionWindow(window)) {
@@ -70,9 +73,9 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
             }
             renderSuggestionBackground(graphics, window);
             if (shouldSuppressNativeTooltip(window, mouseX, mouseY)) {
-                accessor.getSuggestions().render(graphics, Integer.MIN_VALUE, Integer.MIN_VALUE);
+                accessor.getSuggestions().extractRenderState(graphics, Integer.MIN_VALUE, Integer.MIN_VALUE);
             } else {
-                accessor.getSuggestions().render(graphics, mouseX, mouseY);
+                accessor.getSuggestions().extractRenderState(graphics, mouseX, mouseY);
             }
             renderSuggestionIcons(graphics, window);
             renderSuggestionInsight(graphics, mouseX, mouseY);
@@ -105,7 +108,7 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
             for (FormattedCharSequence orderedText : accessor.getCommandUsage()) {
                 int j = i * 10;
                 graphics.fill(usageX - 1, j + usageY, usageX + accessor.getCommandUsageWidth() + 1, j + 12 + usageY, accessor.getFillColor());
-                graphics.drawString(accessor.getFont(), orderedText, usageX, usageY + j + 2, -1);
+                graphics.text(accessor.getFont(), orderedText, usageX, usageY + j + 2, -1);
                 ++i;
             }
         }
@@ -124,7 +127,7 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
         return true;
     }
 
-    private void renderSuggestionInsight(GuiGraphics graphics, int mouseX, int mouseY) {
+    private void renderSuggestionInsight(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         SuggestionWindowAccessor window = (SuggestionWindowAccessor) accessor.getSuggestions();
         if (window == null || ((MultiLineTextFieldWidget) accessor.getInput()).usesDockedInsightPanel()) {
             return;
@@ -183,9 +186,12 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
         }
     }
 
-    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        boolean handled = super.mouseClicked(mouseX, mouseY, mouseButton);
+        boolean handled = super.mouseClicked(new MouseButtonEvent(
+                mouseX,
+                mouseY,
+                new MouseButtonInfo(mouseButton, 0)
+        ));
         if (handled && mouseButton == GLFW.GLFW_MOUSE_BUTTON_LEFT) {
             revealAcceptedSuggestion();
         }
@@ -270,7 +276,7 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
         return true;
     }
 
-    private void renderSuggestionBackground(GuiGraphics graphics, SuggestionWindowAccessor window) {
+    private void renderSuggestionBackground(GuiGraphicsExtractor graphics, SuggestionWindowAccessor window) {
         Rect2i rect = window.getRect();
         int left = rect.getX() - (suggestionIconsVisible ? 13 : 0);
         graphics.fill(left - 1, rect.getY() - 1,
@@ -281,7 +287,7 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
                 SUGGESTION_BACKGROUND);
     }
 
-    private void renderSuggestionIcons(GuiGraphics graphics, SuggestionWindowAccessor window) {
+    private void renderSuggestionIcons(GuiGraphicsExtractor graphics, SuggestionWindowAccessor window) {
         if (!suggestionIconsVisible) {
             return;
         }
@@ -311,11 +317,11 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
         return Optional.of(new ParticlePreview(visual.particleId(), visual.particleSprite()));
     }
 
-    public static void renderFallbackParticle(GuiGraphics graphics, ResourceLocation id, int x, int y, int size) {
+    public static void renderFallbackParticle(GuiGraphicsExtractor graphics, Identifier id, int x, int y, int size) {
         CommandSuggestionVisual.renderFallbackParticle(graphics, id, x, y, size);
     }
 
-    public record ParticlePreview(ResourceLocation id, TextureAtlasSprite sprite) {
+    public record ParticlePreview(Identifier id, TextureAtlasSprite sprite) {
     }
 
     public Style getColor(int colorIndex){
@@ -333,15 +339,15 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
         if(accessor.getCurrentParse() == null){
             return new ArrayList<Pair<Integer,Integer>>();
         }
-        ParseResults<SharedSuggestionProvider> parse = accessor.getCurrentParse();
+        ParseResults<ClientSuggestionProvider> parse = accessor.getCurrentParse();
 
         int m;
         ArrayList<Pair<Integer,Integer>> list = Lists.newArrayList();
         list.add(new Pair<>(1,0));
         int colorIndex = -1;
-        CommandContextBuilder<SharedSuggestionProvider> commandContextBuilder = parse.getContext();
+        CommandContextBuilder<ClientSuggestionProvider> commandContextBuilder = parse.getContext();
         do {
-            for (ParsedArgument<SharedSuggestionProvider, ?> parsedArgument : commandContextBuilder.getArguments().values()) {
+            for (ParsedArgument<ClientSuggestionProvider, ?> parsedArgument : commandContextBuilder.getArguments().values()) {
                 int k;
                 colorIndex = bumpColorIndex(colorIndex);
                 if ((k = Math.max(parsedArgument.getRange().getStart() - firstCharacterIndex, 0)) >= original.length())
@@ -456,7 +462,6 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
         return insightService.describePlaceholder(accessor.getInput().getHighlighted()).isPresent();
     }
 
-    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (accessor.getSuggestions() != null
                 && (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER)) {
@@ -467,11 +472,21 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
             return true;
         }
         boolean acceptingSuggestion = accessor.getSuggestions() != null && keyCode == GLFW.GLFW_KEY_TAB;
-        boolean handled = super.keyPressed(keyCode, scanCode, modifiers);
+        boolean handled = super.keyPressed(new KeyEvent(keyCode, scanCode, modifiers));
         if (handled && acceptingSuggestion) {
             revealAcceptedSuggestion();
         }
         return handled;
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event) {
+        return mouseClicked(event.x(), event.y(), event.button());
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        return keyPressed(event.key(), event.scancode(), event.modifiers());
     }
 
     private int bumpColorIndex(int colorIndex){

@@ -26,7 +26,7 @@ Command Block Studio 的提示系统直接读取当前连接下发的 Brigadier 
 
 ## Component 补全
 
-文本 Component 适用于 `tellraw`、`title` 等命令。编辑器允许在 JSON 尚未闭合时继续补全字段和值，包括内容源、文本样式、记分板、选择器、NBT、点击事件与悬停事件。候选接受后仍由 Minecraft 1.21.1 原生 `ComponentSerialization` Codec 做最终校验。
+文本 Component 适用于 `tellraw`、`title` 等命令。编辑器允许在 JSON 尚未闭合时继续补全字段和值，包括内容源、文本样式、记分板、选择器、NBT、点击事件与悬停事件。候选接受后仍由 Minecraft 26.2 原生 `ComponentSerialization` Codec 做最终校验。
 
 ```mcfunction
 tellraw @a {"text":"Hello","color":"aqua","hoverEvent":{"action":"show_text","contents":{"text":"Details"}}}

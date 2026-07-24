@@ -2,17 +2,18 @@ package com.miofeather.commandblockstudio.main.ui;
 
 import com.miofeather.commandblockstudio.main.insight.CommandInsightService;
 import com.miofeather.commandblockstudio.mixin.ParticleEngineAccessor;
-import net.minecraft.Util;
+import com.miofeather.commandblockstudio.mixin.ParticleResourcesAccessor;
+import net.minecraft.util.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.PlayerFaceRenderer;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.PlayerFaceExtractor;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.resources.DefaultPlayerSkin;
-import net.minecraft.client.resources.PlayerSkin;
+import net.minecraft.world.entity.player.PlayerSkin;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -25,7 +26,7 @@ final class CommandSuggestionVisual {
     private final ItemStack item;
     private final PlayerSkin skin;
     private final PlayerInfo player;
-    private final ResourceLocation particleId;
+    private final Identifier particleId;
     private final SpriteSet particleSprites;
 
     private CommandSuggestionVisual(
@@ -33,7 +34,7 @@ final class CommandSuggestionVisual {
             ItemStack item,
             PlayerSkin skin,
             PlayerInfo player,
-            ResourceLocation particleId,
+            Identifier particleId,
             SpriteSet particleSprites
     ) {
         this.suggestion = suggestion;
@@ -51,15 +52,15 @@ final class CommandSuggestionVisual {
             int cursor,
             String suggestion
     ) {
-        ResourceLocation id = ResourceLocation.tryParse(suggestion);
+        Identifier id = Identifier.tryParse(suggestion);
         if (id != null && insightService.isBlockSuggestion(command, cursor, suggestion)) {
-            ItemStack stack = new ItemStack(BuiltInRegistries.BLOCK.get(id).asItem());
+            ItemStack stack = new ItemStack(BuiltInRegistries.BLOCK.getValue(id).asItem());
             if (!stack.isEmpty()) {
                 return Optional.of(item(suggestion, stack));
             }
         }
         if (id != null && insightService.isItemSuggestion(command, cursor, suggestion)) {
-            ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(id));
+            ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.getValue(id));
             if (!stack.isEmpty()) {
                 return Optional.of(item(suggestion, stack));
             }
@@ -68,7 +69,8 @@ final class CommandSuggestionVisual {
             return Optional.of(item(suggestion, new ItemStack(Items.ENCHANTED_BOOK)));
         }
         if (id != null && insightService.isParticleSuggestion(command, cursor, suggestion)) {
-            SpriteSet sprites = ((ParticleEngineAccessor) minecraft.particleEngine).getSpriteSets().get(id);
+            var particleResources = ((ParticleEngineAccessor) minecraft.particleEngine).getResourceManager();
+            SpriteSet sprites = ((ParticleResourcesAccessor) particleResources).getSpriteSets().get(id);
             return Optional.of(new CommandSuggestionVisual(
                     suggestion,
                     ItemStack.EMPTY,
@@ -113,27 +115,27 @@ final class CommandSuggestionVisual {
         return suggestion.startsWith("@") ? 1 : 2;
     }
 
-    void renderIcon(GuiGraphics graphics, int x, int y, int size) {
+    void renderIcon(GuiGraphicsExtractor graphics, int x, int y, int size) {
         if (skin != null) {
-            PlayerFaceRenderer.draw(graphics, skin, x, y, size);
+            PlayerFaceExtractor.extractRenderState(graphics, skin, x, y, size);
             return;
         }
         if (particleId != null) {
             TextureAtlasSprite sprite = particleSprite();
             if (sprite != null) {
-                graphics.blit(x, y, 0, size, size, sprite);
+                graphics.blitSprite(net.minecraft.client.renderer.RenderPipelines.GUI_TEXTURED, sprite, x, y, size, size);
             } else {
                 renderFallbackParticle(graphics, particleId, x, y, size);
             }
             return;
         }
         if (!item.isEmpty()) {
-            graphics.pose().pushPose();
-            graphics.pose().translate(x, y, 0.0F);
+            graphics.pose().pushMatrix();
+            graphics.pose().translate(x, y);
             float scale = size / 16.0F;
-            graphics.pose().scale(scale, scale, 1.0F);
-            graphics.renderItem(item, 0, 0);
-            graphics.pose().popPose();
+            graphics.pose().scale(scale, scale);
+            graphics.item(item, 0, 0);
+            graphics.pose().popMatrix();
         }
     }
 
@@ -149,7 +151,7 @@ final class CommandSuggestionVisual {
         }
     }
 
-    static void renderFallbackParticle(GuiGraphics graphics, ResourceLocation id, int x, int y, int size) {
+    static void renderFallbackParticle(GuiGraphicsExtractor graphics, Identifier id, int x, int y, int size) {
         int hash = id.hashCode();
         int color = 0xFF000000 | (hash & 0x00BFBFBF) | 0x00303030;
         int pulse = Math.max(1, size / 5);
@@ -176,7 +178,7 @@ final class CommandSuggestionVisual {
         return player;
     }
 
-    ResourceLocation particleId() {
+    Identifier particleId() {
         return particleId;
     }
 }

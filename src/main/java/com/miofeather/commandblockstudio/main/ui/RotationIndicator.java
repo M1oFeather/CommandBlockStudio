@@ -3,16 +3,15 @@ package com.miofeather.commandblockstudio.main.ui;
 import com.miofeather.commandblockstudio.main.CommandBlockStudio;
 import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.network.chat.Component;
-import org.joml.AxisAngle4d;
-import org.joml.Quaternionf;
 import org.joml.Vector2d;
+import net.minecraft.client.input.MouseButtonEvent;
 
 public class RotationIndicator extends AbstractWidget {
     private boolean dragging = false;
@@ -42,31 +41,31 @@ public class RotationIndicator extends AbstractWidget {
     }
 
     @Override
-    protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    protected void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         int halfWidth = getWidth() / 2;
         int halfHeight = getHeight() / 2;
-        graphics.blitSprite(CommandBlockStudio.COMPASS_FRAME, getX(), getY(), getWidth(), getHeight());
-        graphics.pose().pushPose();
-        graphics.pose().translate(getX() + halfWidth, getY() + halfHeight, 0.0f);
-        graphics.pose().mulPose(new Quaternionf().rotateZ((float) ((angle + 1) * Math.PI)));
-        graphics.blitSprite(CommandBlockStudio.COMPASS_NEEDLE, -halfWidth, -halfHeight, getWidth(), getHeight());
-        graphics.pose().popPose();
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, CommandBlockStudio.COMPASS_FRAME, getX(), getY(), getWidth(), getHeight());
+        graphics.pose().pushMatrix();
+        graphics.pose().translate(getX() + halfWidth, getY() + halfHeight);
+        graphics.pose().rotate((float) ((angle + 1) * Math.PI));
+        graphics.blitSprite(RenderPipelines.GUI_TEXTURED, CommandBlockStudio.COMPASS_NEEDLE, -halfWidth, -halfHeight, getWidth(), getHeight());
+        graphics.pose().popMatrix();
     }
 
     @Override
     protected void updateWidgetNarration(NarrationElementOutput builder) {}
 
     @Override
-    public void onClick(double mouseX, double mouseY, int button) {
-        if (this.isValidClickButton(button) && this.clicked(mouseX, mouseY)) {
+    public void onClick(MouseButtonEvent event, boolean doubleClick) {
+        if (this.isValidClickButton(event.buttonInfo()) && this.clicked(event.x(), event.y())) {
             this.playDownSound(Minecraft.getInstance().getSoundManager());
             dragging = true;
-            setAngleFromMousePos(mouseX, mouseY);
+            setAngleFromMousePos(event.x(), event.y());
         }
     }
 
     @Override
-    public void onRelease(double mouseX, double mouseY) {
+    public void onRelease(MouseButtonEvent event) {
         dragging = false;
     }
 
@@ -75,9 +74,9 @@ public class RotationIndicator extends AbstractWidget {
     }
 
     @Override
-    public void onDrag(double mouseX, double mouseY, double distX, double distY){
+    protected void onDrag(MouseButtonEvent event, double distX, double distY){
         if(dragging) {
-            setAngleFromMousePos(mouseX, mouseY);
+            setAngleFromMousePos(event.x(), event.y());
         }
     }
 

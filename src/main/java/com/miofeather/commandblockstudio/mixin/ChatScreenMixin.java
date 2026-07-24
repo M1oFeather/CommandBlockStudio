@@ -2,11 +2,12 @@ package com.miofeather.commandblockstudio.mixin;
 
 import com.miofeather.commandblockstudio.main.ui.ChatCommandAssistantPanel;
 import com.miofeather.commandblockstudio.main.ui.ChatCommandSuggestor;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.CommandSuggestions;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
 import net.minecraft.network.chat.Component;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
@@ -52,14 +53,15 @@ public abstract class ChatScreenMixin extends Screen {
     }
 
     @Inject(
-            method = "render",
+            method = "extractRenderState",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/gui/components/EditBox;render(Lnet/minecraft/client/gui/GuiGraphics;IIF)V"
+                    target = "Lnet/minecraft/client/gui/components/CommandSuggestions;extractRenderState(Lnet/minecraft/client/gui/GuiGraphicsExtractor;II)V",
+                    shift = At.Shift.BEFORE
             )
     )
     private void commandBlockStudio$renderChatAssistant(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             int mouseX,
             int mouseY,
             float partialTick,
@@ -72,20 +74,18 @@ public abstract class ChatScreenMixin extends Screen {
         int panelX = width - panelWidth - 6;
         int panelHeight = Math.max(90, height - 30);
         commandBlockStudio$assistantPanel.setBounds(panelX, 6, panelWidth, panelHeight);
-        commandBlockStudio$assistantPanel.render(graphics, mouseX, mouseY, partialTick);
+        commandBlockStudio$assistantPanel.extractRenderState(graphics, mouseX, mouseY, partialTick);
     }
 
     @Inject(method = "keyPressed", at = @At("HEAD"), cancellable = true)
     private void commandBlockStudio$completeWithControlSpace(
-            int keyCode,
-            int scanCode,
-            int modifiers,
+            KeyEvent event,
             CallbackInfoReturnable<Boolean> callbackInfo
     ) {
         if (commandBlockStudio$chatSuggestor != null
                 && commandBlockStudio$chatSuggestor.isCommandMode()
-                && keyCode == GLFW.GLFW_KEY_SPACE
-                && hasControlDown()) {
+                && event.key() == GLFW.GLFW_KEY_SPACE
+                && minecraft.hasControlDown()) {
             commandBlockStudio$chatSuggestor.showSuggestionsAtCursor();
             callbackInfo.setReturnValue(true);
         }

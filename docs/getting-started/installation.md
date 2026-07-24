@@ -16,9 +16,9 @@
 
 ## 客户端安装
 
-1. 安装 Minecraft 1.21.1 对应的 NeoForge `21.1.217`。
+1. 安装 Minecraft 26.2 对应的 NeoForge `26.2.0.32-beta`。
 2. 将 `command_block_studio-<模组版本>-<Minecraft版本>-NeoForge.jar` 放入游戏实例的 `mods` 目录。
-3. 使用 Java 21 启动游戏。
+3. 使用 Java 25 启动游戏。
 4. 在模组列表中确认 **Command Block Studio** 已加载。
 5. 进入有命令方块编辑权限的世界，打开命令方块进行验证。
 
@@ -37,7 +37,7 @@
 
 1. 停止服务器。
 2. 将同版本 JAR 放入服务端 `mods` 目录。
-3. 确认服务器使用 Java 21 和 NeoForge 21.1.217。
+3. 确认服务器使用 Java 25 和 NeoForge 26.2.0.32-beta。
 4. 启动服务器并检查日志中没有依赖或网络载荷注册错误。
 
 ## 双向非必须

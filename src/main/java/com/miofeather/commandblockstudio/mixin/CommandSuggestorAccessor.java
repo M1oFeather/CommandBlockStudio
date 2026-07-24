@@ -6,7 +6,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.CommandSuggestions;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.network.chat.Style;
 import org.spongepowered.asm.mixin.Mixin;
@@ -38,7 +38,7 @@ public interface CommandSuggestorAccessor{
     EditBox getInput();
 
     @Accessor
-    ParseResults<SharedSuggestionProvider> getCurrentParse();
+    ParseResults<ClientSuggestionProvider> getCurrentParse();
 
     @Accessor
     CompletableFuture<Suggestions> getPendingSuggestions();

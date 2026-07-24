@@ -2,7 +2,7 @@ package com.miofeather.commandblockstudio.main.config;
 
 import com.miofeather.commandblockstudio.main.CommandBlockStudio;
 import com.miofeather.commandblockstudio.main.ui.screen.StudioScaledScreen;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.util.FormattedCharSequence;
@@ -42,31 +42,31 @@ public class CommandInsightLanguageScreen extends StudioScaledScreen {
     public void onClose() {
         CommandBlockStudio.writeConfig();
         if (minecraft != null) {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
         }
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         int studioMouseX = studioMouseX(mouseX);
         int studioMouseY = studioMouseY(mouseY);
         beginStudioRender(graphics);
         graphics.fill(0, 0, width, height, 0xFF0B0E12);
         graphics.fill(0, 0, width, 34, 0xFF20242A);
         graphics.fill(0, 34, width, 35, 0xFF343A42);
-        super.render(graphics, studioMouseX, studioMouseY, delta);
-        graphics.drawCenteredString(font, title, width / 2, 14, 0xFFFFFFFF);
+        super.extractRenderState(graphics, studioMouseX, studioMouseY, delta);
+        graphics.centeredText(font, title, width / 2, 14, 0xFFFFFFFF);
         List<FormattedCharSequence> hintLines = font.split(
                 Component.translatable("cbs.config.insightLanguage.hint"),
                 Math.max(120, Math.min(300, width - 24))
         );
         int hintY = height / 2 - 42 - Math.max(0, hintLines.size() - 1) * (font.lineHeight + 2);
         for (int i = 0; i < hintLines.size(); i++) {
-            graphics.drawCenteredString(font, hintLines.get(i), width / 2, hintY + i * (font.lineHeight + 2), 0xFFA0A0A0);
+            graphics.centeredText(font, hintLines.get(i), width / 2, hintY + i * (font.lineHeight + 2), 0xFFA0A0A0);
         }
         endStudioRender(graphics);
     }

@@ -7,7 +7,7 @@ import com.miofeather.commandblockstudio.main.insight.CommandSyntaxHint;
 import com.miofeather.commandblockstudio.main.insight.ParticleDisplayNames;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.network.chat.Component;
@@ -58,7 +58,7 @@ public final class ChatCommandAssistantPanel {
         return true;
     }
 
-    public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
         if (!isVisible()) {
             return;
         }
@@ -66,7 +66,7 @@ public final class ChatCommandAssistantPanel {
         graphics.fill(x, y, x + width, y + height, 0xF216191E);
         graphics.fill(x, y, x + 2, y + height, 0xFF3BAFDA);
         graphics.fill(x, y + 22, x + width, y + 23, 0xFF30363D);
-        graphics.drawString(font, Component.translatable("cbs.chatAssistant.title"), x + 8, y + 7, 0xFFF0F3F6);
+        graphics.text(font, Component.translatable("cbs.chatAssistant.title"), x + 8, y + 7, 0xFFF0F3F6);
 
         Optional<CommandSuggestionVisual> visual = suggestor.getSelectedVisual();
         int contentTop = y + 29;
@@ -110,7 +110,7 @@ public final class ChatCommandAssistantPanel {
         for (int index = 0; index < cachedLines.size(); index++) {
             int lineY = contentTop + index * lineHeight - scrollOffset;
             if (lineY + lineHeight >= contentTop && lineY < contentBottom) {
-                graphics.drawString(font, cachedLines.get(index), x + 8, lineY, 0xFFE6EDF3);
+                graphics.text(font, cachedLines.get(index), x + 8, lineY, 0xFFE6EDF3);
             }
         }
         graphics.disableScissor();
@@ -128,14 +128,14 @@ public final class ChatCommandAssistantPanel {
                 Component.translatable("cbs.chatAssistant.shortcut").getString(),
                 width - 16
         );
-        graphics.drawString(font, shortcut, x + 8, y + height - 12, 0xFF8A949E);
+        graphics.text(font, shortcut, x + 8, y + height - 12, 0xFF8A949E);
     }
 
-    private void renderPreview(GuiGraphics graphics, CommandSuggestionVisual visual, int previewY) {
+    private void renderPreview(GuiGraphicsExtractor graphics, CommandSuggestionVisual visual, int previewY) {
         int previewSize = Math.min(38, Math.max(28, width / 5));
         int previewX = x + 8;
         graphics.fill(x + 5, previewY, x + width - 5, previewY + 49, 0xFF101419);
-        graphics.renderOutline(previewX - 1, previewY + 3, previewSize + 2, previewSize + 2, 0xFF343A42);
+        graphics.outline(previewX - 1, previewY + 3, previewSize + 2, previewSize + 2, 0xFF343A42);
         visual.renderIcon(graphics, previewX, previewY + 4, previewSize);
 
         int labelX = previewX + previewSize + 8;
@@ -143,21 +143,21 @@ public final class ChatCommandAssistantPanel {
         if (visual.player() != null || visual.skin() != null) {
             renderPlayerDetails(graphics, visual, labelX, previewY, labelWidth);
         } else if (visual.particleId() != null) {
-            graphics.drawString(
+            graphics.text(
                     font,
                     font.plainSubstrByWidth(ParticleDisplayNames.get(visual.particleId()), labelWidth),
                     labelX,
                     previewY + 6,
                     0xFF56D4DD
             );
-            graphics.drawString(
+            graphics.text(
                     font,
                     font.plainSubstrByWidth(visual.particleId().toString(), labelWidth),
                     labelX,
                     previewY + 20,
                     0xFFDDE2E7
             );
-            graphics.drawString(
+            graphics.text(
                     font,
                     Component.translatable("cbs.particle.preview"),
                     labelX,
@@ -165,14 +165,14 @@ public final class ChatCommandAssistantPanel {
                     0xFF8A949E
             );
         } else if (!visual.item().isEmpty()) {
-            graphics.drawString(
+            graphics.text(
                     font,
                     font.plainSubstrByWidth(visual.item().getHoverName().getString(), labelWidth),
                     labelX,
                     previewY + 9,
                     0xFFF0F3F6
             );
-            graphics.drawString(
+            graphics.text(
                     font,
                     font.plainSubstrByWidth(visual.suggestion(), labelWidth),
                     labelX,
@@ -183,13 +183,13 @@ public final class ChatCommandAssistantPanel {
     }
 
     private void renderPlayerDetails(
-            GuiGraphics graphics,
+            GuiGraphicsExtractor graphics,
             CommandSuggestionVisual visual,
             int labelX,
             int previewY,
             int labelWidth
     ) {
-        graphics.drawString(
+        graphics.text(
                 font,
                 font.plainSubstrByWidth(visual.suggestion(), labelWidth),
                 labelX,
@@ -198,7 +198,7 @@ public final class ChatCommandAssistantPanel {
         );
         PlayerInfo player = visual.player();
         if (player == null) {
-            graphics.drawString(
+            graphics.text(
                     font,
                     Component.translatable("cbs.chatAssistant.player.offline"),
                     labelX,
@@ -207,14 +207,14 @@ public final class ChatCommandAssistantPanel {
             );
             return;
         }
-        graphics.drawString(
+        graphics.text(
                 font,
                 Component.translatable("cbs.chatAssistant.player.online", player.getLatency()),
                 labelX,
                 previewY + 18,
                 0xFF57D17B
         );
-        graphics.drawString(
+        graphics.text(
                 font,
                 font.plainSubstrByWidth(player.getGameMode().getLongDisplayName().getString(), labelWidth),
                 labelX,

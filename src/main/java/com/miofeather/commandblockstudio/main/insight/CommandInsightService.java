@@ -15,7 +15,7 @@ import com.mojang.brigadier.context.SuggestionContext;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
-import net.minecraft.commands.SharedSuggestionProvider;
+import net.minecraft.client.multiplayer.ClientSuggestionProvider;
 import net.minecraft.commands.Commands;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
@@ -23,7 +23,7 @@ import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.ComponentUtils;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.level.block.Block;
 
@@ -41,7 +41,7 @@ import java.util.Set;
 public class CommandInsightService {
     private final Minecraft minecraft;
     private final CommandSuggestorAccessor suggestor;
-    private ParseResults<SharedSuggestionProvider> cachedSyntaxParse;
+    private ParseResults<ClientSuggestionProvider> cachedSyntaxParse;
     private int cachedSyntaxCursor = -1;
     private boolean cachedSyntaxChinese;
     private Optional<CommandSyntaxHint> cachedSyntaxHint = Optional.empty();
@@ -52,7 +52,7 @@ public class CommandInsightService {
     }
 
     public Optional<CommandInsight> describeAt(String command, int cursor) {
-        ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
+        ParseResults<ClientSuggestionProvider> parse = suggestor.getCurrentParse();
         if (parse == null || command.isBlank()) {
             return Optional.empty();
         }
@@ -78,15 +78,15 @@ public class CommandInsightService {
             return Optional.of(describeArgument(root, doc, name, findArgumentNode(parse, name).orElse(null)));
         }
 
-        Optional<ParsedCommandNode<SharedSuggestionProvider>> node = findNodeAt(parse, index);
+        Optional<ParsedCommandNode<ClientSuggestionProvider>> node = findNodeAt(parse, index);
         if (node.isPresent()) {
-            CommandNode<SharedSuggestionProvider> commandNode = node.get().getNode();
+            CommandNode<ClientSuggestionProvider> commandNode = node.get().getNode();
             String name = commandNode.getName();
             if (commandNode instanceof LiteralCommandNode) {
                 return Optional.of(describeLiteral(root, doc, name));
             }
             if (commandNode instanceof ArgumentCommandNode) {
-                return Optional.of(describeArgument(root, doc, name, (ArgumentCommandNode<SharedSuggestionProvider, ?>) commandNode));
+                return Optional.of(describeArgument(root, doc, name, (ArgumentCommandNode<ClientSuggestionProvider, ?>) commandNode));
             }
         }
 
@@ -109,7 +109,7 @@ public class CommandInsightService {
     }
 
     public Optional<CommandInsight> describeCursor(String command, int cursor) {
-        ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
+        ParseResults<ClientSuggestionProvider> parse = suggestor.getCurrentParse();
         if (parse == null || command.isBlank()) {
             return Optional.empty();
         }
@@ -135,7 +135,7 @@ public class CommandInsightService {
             return Optional.of(describeArgument(root, doc, name, findArgumentNode(parse, name).orElse(null)));
         }
 
-        Optional<ParsedCommandNode<SharedSuggestionProvider>> node = findNodeBeforeOrAt(parse, index);
+        Optional<ParsedCommandNode<ClientSuggestionProvider>> node = findNodeBeforeOrAt(parse, index);
         if (node.isPresent()) {
             String name = node.get().getNode().getName();
             String nodeSummary = doc.map(commandDoc -> commandDoc.describeNode(name)).orElse(null);
@@ -152,7 +152,7 @@ public class CommandInsightService {
     }
 
     public Optional<CommandInsight> describeSuggestion(String command, int cursor, String suggestion) {
-        ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
+        ParseResults<ClientSuggestionProvider> parse = suggestor.getCurrentParse();
         if (parse != null) {
             Optional<CommandInsight> structured = StructuredArgumentCompletion.describeSuggestion(
                     command,
@@ -188,17 +188,17 @@ public class CommandInsightService {
             return Optional.of(new CommandInsight(root + " " + normalizedSuggestion, nodeSummary, List.of(), true));
         }
 
-        SuggestionContext<SharedSuggestionProvider> context = parse.getContext().findSuggestionContext(clamp(cursor, 0, command.length()));
-        for (CommandNode<SharedSuggestionProvider> child : context.parent.getChildren()) {
+        SuggestionContext<ClientSuggestionProvider> context = parse.getContext().findSuggestionContext(clamp(cursor, 0, command.length()));
+        for (CommandNode<ClientSuggestionProvider> child : context.parent.getChildren()) {
             if (child instanceof LiteralCommandNode && stripNamespace(child.getName()).equals(normalizedSuggestion)) {
                 return Optional.of(describeLiteral(root, doc, child.getName()));
             }
         }
-        for (CommandNode<SharedSuggestionProvider> child : context.parent.getChildren()) {
+        for (CommandNode<ClientSuggestionProvider> child : context.parent.getChildren()) {
             if (child instanceof ArgumentCommandNode<?, ?> argumentNode) {
                 @SuppressWarnings("unchecked")
-                ArgumentCommandNode<SharedSuggestionProvider, ?> typed =
-                        (ArgumentCommandNode<SharedSuggestionProvider, ?>) argumentNode;
+                ArgumentCommandNode<ClientSuggestionProvider, ?> typed =
+                        (ArgumentCommandNode<ClientSuggestionProvider, ?>) argumentNode;
                 return Optional.of(describeArgument(root, doc, child.getName(), typed));
             }
         }
@@ -206,7 +206,7 @@ public class CommandInsightService {
     }
 
     public boolean isBlockSuggestion(String command, int cursor, String suggestion) {
-        ResourceLocation id = ResourceLocation.tryParse(suggestion);
+        Identifier id = Identifier.tryParse(suggestion);
         return id != null
                 && (expectsArgument(command, cursor, Set.of("BlockStateArgument", "BlockPredicateArgument"), null)
                 || expectsArgumentNamed(command, cursor, Set.of("block", "blockstate", "state", "palette")))
@@ -214,7 +214,7 @@ public class CommandInsightService {
     }
 
     public boolean isItemSuggestion(String command, int cursor, String suggestion) {
-        ResourceLocation id = ResourceLocation.tryParse(suggestion);
+        Identifier id = Identifier.tryParse(suggestion);
         return id != null
                 && (expectsArgument(command, cursor, Set.of("ItemArgument", "ItemPredicateArgument"), null)
                 || expectsArgumentNamed(command, cursor, Set.of("item", "itemstack", "stack")))
@@ -222,18 +222,18 @@ public class CommandInsightService {
     }
 
     public boolean isEnchantmentSuggestion(String command, int cursor, String suggestion) {
-        ResourceLocation id = ResourceLocation.tryParse(suggestion);
+        Identifier id = Identifier.tryParse(suggestion);
         if (id == null || minecraft.level == null
                 || !expectsArgument(command, cursor, Set.of("ResourceArgument", "ResourceOrTagArgument"), "enchant")) {
             return false;
         }
-        return minecraft.level.registryAccess().registry(Registries.ENCHANTMENT)
+        return minecraft.level.registryAccess().lookup(Registries.ENCHANTMENT)
                 .map(registry -> registry.containsKey(id))
                 .orElse(false);
     }
 
     public boolean isParticleSuggestion(String command, int cursor, String suggestion) {
-        ResourceLocation id = ResourceLocation.tryParse(suggestion);
+        Identifier id = Identifier.tryParse(suggestion);
         return id != null
                 && (expectsArgument(command, cursor, Set.of("ParticleArgument"), null)
                 || expectsArgumentNamed(command, cursor, Set.of("particle", "particletype", "effect")))
@@ -255,10 +255,10 @@ public class CommandInsightService {
     }
 
     private Optional<CommandInsight> describeRichSuggestion(String command, int cursor, String suggestion) {
-        ResourceLocation id = ResourceLocation.tryParse(suggestion);
+        Identifier id = Identifier.tryParse(suggestion);
         boolean chinese = CommandBlockStudio.useChineseCommandInsight();
         if (id != null && isBlockSuggestion(command, cursor, suggestion)) {
-            Block block = BuiltInRegistries.BLOCK.get(id);
+            Block block = BuiltInRegistries.BLOCK.getValue(id);
             String properties = block.getStateDefinition().getProperties().stream()
                     .map(property -> property.getName())
                     .sorted()
@@ -271,7 +271,8 @@ public class CommandInsightService {
         }
 
         if (id != null && isItemSuggestion(command, cursor, suggestion)) {
-            String itemName = BuiltInRegistries.ITEM.get(id).getDescription().getString();
+            var item = BuiltInRegistries.ITEM.getValue(id);
+            String itemName = item.getName(item.getDefaultInstance()).getString();
             String summary = chinese
                     ? "物品 " + itemName + "；来自当前服务器物品注册表。"
                     : "Item " + itemName + "; from the active server item registry.";
@@ -279,7 +280,7 @@ public class CommandInsightService {
         }
 
         if (id != null && isEnchantmentSuggestion(command, cursor, suggestion) && minecraft.level != null) {
-            Optional<Registry<Enchantment>> registry = minecraft.level.registryAccess().registry(Registries.ENCHANTMENT);
+            Optional<Registry<Enchantment>> registry = minecraft.level.registryAccess().lookup(Registries.ENCHANTMENT);
             Optional<Enchantment> enchantment = registry.flatMap(value -> value.getOptional(id));
             if (enchantment.isPresent()) {
                 Enchantment value = enchantment.get();
@@ -318,17 +319,17 @@ public class CommandInsightService {
     }
 
     private boolean expectsArgument(String command, int cursor, Set<String> typeNames, String nameFragment) {
-        ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
+        ParseResults<ClientSuggestionProvider> parse = suggestor.getCurrentParse();
         if (parse == null) {
             return false;
         }
-        SuggestionContext<SharedSuggestionProvider> context;
+        SuggestionContext<ClientSuggestionProvider> context;
         try {
             context = parse.getContext().findSuggestionContext(clamp(cursor, 0, command.length()));
         } catch (IllegalArgumentException ignored) {
             return false;
         }
-        for (CommandNode<SharedSuggestionProvider> child : context.parent.getChildren()) {
+        for (CommandNode<ClientSuggestionProvider> child : context.parent.getChildren()) {
             if (!(child instanceof ArgumentCommandNode<?, ?> argumentNode)) {
                 continue;
             }
@@ -343,17 +344,17 @@ public class CommandInsightService {
     }
 
     private boolean expectsArgumentNamed(String command, int cursor, Set<String> names) {
-        ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
+        ParseResults<ClientSuggestionProvider> parse = suggestor.getCurrentParse();
         if (parse == null) {
             return false;
         }
-        SuggestionContext<SharedSuggestionProvider> context;
+        SuggestionContext<ClientSuggestionProvider> context;
         try {
             context = parse.getContext().findSuggestionContext(clamp(cursor, 0, command.length()));
         } catch (IllegalArgumentException | IllegalStateException ignored) {
             return false;
         }
-        for (CommandNode<SharedSuggestionProvider> child : context.parent.getChildren()) {
+        for (CommandNode<ClientSuggestionProvider> child : context.parent.getChildren()) {
             if (!(child instanceof ArgumentCommandNode<?, ?>)) {
                 continue;
             }
@@ -366,7 +367,7 @@ public class CommandInsightService {
     }
 
     public Optional<CommandDiagnostic> getDiagnostic(String command) {
-        ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
+        ParseResults<ClientSuggestionProvider> parse = suggestor.getCurrentParse();
         if (parse == null || command.isBlank()) {
             return Optional.empty();
         }
@@ -420,7 +421,7 @@ public class CommandInsightService {
     }
 
     public Optional<CommandSyntaxHint> findSyntaxHint(String command, int cursor) {
-        ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
+        ParseResults<ClientSuggestionProvider> parse = suggestor.getCurrentParse();
         if (parse == null || command.isBlank() || cursor < 0 || cursor > command.length()
                 || !parse.getReader().getString().equals(command)) {
             return Optional.empty();
@@ -442,7 +443,7 @@ public class CommandInsightService {
     }
 
     public Optional<CommandSyntaxHint> findStructuredSyntaxHint(String command, int cursor) {
-        ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
+        ParseResults<ClientSuggestionProvider> parse = suggestor.getCurrentParse();
         if (parse == null || command.isBlank() || cursor < 0 || cursor > command.length()
                 || !parse.getReader().getString().equals(command)) {
             return Optional.empty();
@@ -453,14 +454,14 @@ public class CommandInsightService {
     private Optional<CommandSyntaxHint> computeSyntaxHint(
             String command,
             int cursor,
-            ParseResults<SharedSuggestionProvider> parse
+            ParseResults<ClientSuggestionProvider> parse
     ) {
         if (!parse.getReader().canRead() && Commands.getParseException(parse) == null) {
             return Optional.empty();
         }
 
         int index = clamp(cursor, 0, command.length());
-        SuggestionContext<SharedSuggestionProvider> context;
+        SuggestionContext<ClientSuggestionProvider> context;
         try {
             context = parse.getContext().findSuggestionContext(index);
         } catch (IllegalStateException ignored) {
@@ -474,18 +475,18 @@ public class CommandInsightService {
             return Optional.empty();
         }
 
-        List<CommandNode<SharedSuggestionProvider>> candidates = new ArrayList<>(context.parent.getChildren());
+        List<CommandNode<ClientSuggestionProvider>> candidates = new ArrayList<>(context.parent.getChildren());
         if (context.parent.getRedirect() != null) {
             candidates.addAll(context.parent.getRedirect().getChildren());
         }
 
-        for (CommandNode<SharedSuggestionProvider> candidate : candidates) {
+        for (CommandNode<ClientSuggestionProvider> candidate : candidates) {
             if (!(candidate instanceof ArgumentCommandNode<?, ?> argumentNode)) {
                 continue;
             }
             @SuppressWarnings("unchecked")
-            ArgumentCommandNode<SharedSuggestionProvider, ?> typed =
-                    (ArgumentCommandNode<SharedSuggestionProvider, ?>) argumentNode;
+            ArgumentCommandNode<ClientSuggestionProvider, ?> typed =
+                    (ArgumentCommandNode<ClientSuggestionProvider, ?>) argumentNode;
             Optional<CommandSyntaxHint> hint = buildCompositeHint(typed, partial, command, context.parent);
             if (hint.isPresent()) {
                 return hint;
@@ -499,14 +500,14 @@ public class CommandInsightService {
 
         // Ambiguous commands such as /tp may choose a shorter executable branch as the main parse.
         // Failed sibling branches still identify the intended composite argument and its real start.
-        for (Map.Entry<CommandNode<SharedSuggestionProvider>, CommandSyntaxException> failure
+        for (Map.Entry<CommandNode<ClientSuggestionProvider>, CommandSyntaxException> failure
                 : parse.getExceptions().entrySet()) {
             if (!(failure.getKey() instanceof ArgumentCommandNode<?, ?> argumentNode)) {
                 continue;
             }
             @SuppressWarnings("unchecked")
-            ArgumentCommandNode<SharedSuggestionProvider, ?> typed =
-                    (ArgumentCommandNode<SharedSuggestionProvider, ?>) argumentNode;
+            ArgumentCommandNode<ClientSuggestionProvider, ?> typed =
+                    (ArgumentCommandNode<ClientSuggestionProvider, ?>) argumentNode;
             if (compositeSyntax(typed.getType()).isEmpty()) {
                 continue;
             }
@@ -516,7 +517,7 @@ public class CommandInsightService {
                 continue;
             }
             String failedPartial = command.substring(failedArgumentStart, index);
-            CommandNode<SharedSuggestionProvider> failedUsageParent = findParentNode(typed).orElse(context.parent);
+            CommandNode<ClientSuggestionProvider> failedUsageParent = findParentNode(typed).orElse(context.parent);
             Optional<CommandSyntaxHint> hint = buildCompositeHint(
                     typed,
                     failedPartial,
@@ -535,13 +536,13 @@ public class CommandInsightService {
             return Optional.empty();
         }
 
-        CommandDispatcher<SharedSuggestionProvider> dispatcher = minecraft.player.connection.getCommands();
-        SharedSuggestionProvider provider = minecraft.player.connection.getSuggestionsProvider();
+        CommandDispatcher<ClientSuggestionProvider> dispatcher = minecraft.player.connection.getCommands();
+        ClientSuggestionProvider provider = minecraft.player.connection.getSuggestionsProvider();
         StringReader reader = new StringReader(command);
         if (reader.canRead() && reader.peek() == '/') {
             reader.skip();
         }
-        CommandContextBuilder<SharedSuggestionProvider> context = new CommandContextBuilder<>(
+        CommandContextBuilder<ClientSuggestionProvider> context = new CommandContextBuilder<>(
                 dispatcher,
                 provider,
                 dispatcher.getRoot(),
@@ -551,9 +552,9 @@ public class CommandInsightService {
     }
 
     private Optional<CommandSyntaxHint> exploreSyntaxBranches(
-            CommandNode<SharedSuggestionProvider> parent,
+            CommandNode<ClientSuggestionProvider> parent,
             StringReader originalReader,
-            CommandContextBuilder<SharedSuggestionProvider> contextSoFar,
+            CommandContextBuilder<ClientSuggestionProvider> contextSoFar,
             String command,
             int depth,
             int[] exploredNodes
@@ -562,16 +563,16 @@ public class CommandInsightService {
             return Optional.empty();
         }
 
-        SharedSuggestionProvider provider = contextSoFar.getSource();
-        for (CommandNode<SharedSuggestionProvider> child : parent.getRelevantNodes(originalReader)) {
+        ClientSuggestionProvider provider = contextSoFar.getSource();
+        for (CommandNode<ClientSuggestionProvider> child : parent.getRelevantNodes(originalReader)) {
             if (!child.canUse(provider) || ++exploredNodes[0] > 128) {
                 continue;
             }
 
             if (child instanceof ArgumentCommandNode<?, ?> argumentNode) {
                 @SuppressWarnings("unchecked")
-                ArgumentCommandNode<SharedSuggestionProvider, ?> typed =
-                        (ArgumentCommandNode<SharedSuggestionProvider, ?>) argumentNode;
+                ArgumentCommandNode<ClientSuggestionProvider, ?> typed =
+                        (ArgumentCommandNode<ClientSuggestionProvider, ?>) argumentNode;
                 if (compositeSyntax(typed.getType()).isPresent()) {
                     String partial = command.substring(originalReader.getCursor());
                     Optional<CommandSyntaxHint> hint = buildCompositeHint(typed, partial, command, parent);
@@ -581,7 +582,7 @@ public class CommandInsightService {
                 }
             }
 
-            CommandContextBuilder<SharedSuggestionProvider> context = contextSoFar.copy();
+            CommandContextBuilder<ClientSuggestionProvider> context = contextSoFar.copy();
             StringReader reader = new StringReader(originalReader);
             try {
                 child.parse(reader, context);
@@ -599,7 +600,7 @@ public class CommandInsightService {
             reader.skip();
 
             if (child.getRedirect() != null) {
-                CommandContextBuilder<SharedSuggestionProvider> childContext = new CommandContextBuilder<>(
+                CommandContextBuilder<ClientSuggestionProvider> childContext = new CommandContextBuilder<>(
                         context.getDispatcher(),
                         provider,
                         child.getRedirect(),
@@ -634,10 +635,10 @@ public class CommandInsightService {
     }
 
     private Optional<CommandSyntaxHint> buildCompositeHint(
-            ArgumentCommandNode<SharedSuggestionProvider, ?> node,
+            ArgumentCommandNode<ClientSuggestionProvider, ?> node,
             String partial,
             String command,
-            CommandNode<SharedSuggestionProvider> usageParent
+            CommandNode<ClientSuggestionProvider> usageParent
     ) {
         Optional<CompositeSyntax> syntax = compositeSyntax(node.getType());
         if (syntax.isEmpty()) {
@@ -668,7 +669,7 @@ public class CommandInsightService {
         String separator = command.isEmpty() || Character.isWhitespace(command.charAt(command.length() - 1)) ? "" : " ";
         String insertion = separator + placeholders;
 
-        Map<CommandNode<SharedSuggestionProvider>, String> usages = getSmartUsages(usageParent);
+        Map<CommandNode<ClientSuggestionProvider>, String> usages = getSmartUsages(usageParent);
         String available = String.join(" | ", usages.values().stream().limit(3).toList());
         boolean chinese = CommandBlockStudio.useChineseCommandInsight();
         String summary = chinese
@@ -794,7 +795,7 @@ public class CommandInsightService {
             return Optional.empty();
         }
 
-        ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
+        ParseResults<ClientSuggestionProvider> parse = suggestor.getCurrentParse();
         Optional<CommandDoc> doc = parse == null ? Optional.empty() : findAvailableDoc(root, parse);
         if (doc.isPresent() && !doc.get().examples().isEmpty()) {
             return Optional.of(doc.get().examples().getFirst());
@@ -829,7 +830,7 @@ public class CommandInsightService {
             String root,
             Optional<CommandDoc> doc,
             String name,
-            ArgumentCommandNode<SharedSuggestionProvider, ?> node
+            ArgumentCommandNode<ClientSuggestionProvider, ?> node
     ) {
         String summary = doc.map(commandDoc -> commandDoc.describeArgument(name)).orElse(null);
         if (summary != null) {
@@ -844,7 +845,7 @@ public class CommandInsightService {
     }
 
     private Optional<CommandInsight> describeExpected(
-            ParseResults<SharedSuggestionProvider> parse,
+            ParseResults<ClientSuggestionProvider> parse,
             int cursor,
             String root,
             Optional<CommandDoc> doc
@@ -853,15 +854,15 @@ public class CommandInsightService {
             return Optional.empty();
         }
 
-        SuggestionContext<SharedSuggestionProvider> context = parse.getContext().findSuggestionContext(cursor);
-        CommandNode<SharedSuggestionProvider> usageParent = context.parent;
+        SuggestionContext<ClientSuggestionProvider> context = parse.getContext().findSuggestionContext(cursor);
+        CommandNode<ClientSuggestionProvider> usageParent = context.parent;
         String input = parse.getReader().getString();
         if (cursor > 0 && cursor <= input.length() && !Character.isWhitespace(input.charAt(cursor - 1))) {
             usageParent = findNodeEndingAt(parse, cursor)
                     .map(ParsedCommandNode::getNode)
                     .orElse(usageParent);
         }
-        Map<CommandNode<SharedSuggestionProvider>, String> usages = getSmartUsages(usageParent);
+        Map<CommandNode<ClientSuggestionProvider>, String> usages = getSmartUsages(usageParent);
         if (usages.isEmpty()) {
             return Optional.empty();
         }
@@ -870,7 +871,7 @@ public class CommandInsightService {
         String summary = (CommandBlockStudio.useChineseCommandInsight() ? "可填写：" : "Expected: ") + String.join("  |  ", choices);
         String title = CommandBlockStudio.useChineseCommandInsight() ? "下一参数" : "Next argument";
 
-        for (CommandNode<SharedSuggestionProvider> node : usages.keySet()) {
+        for (CommandNode<ClientSuggestionProvider> node : usages.keySet()) {
             String detail;
             if (node instanceof LiteralCommandNode) {
                 detail = doc.map(commandDoc -> commandDoc.describeNode(node.getName())).orElse(null);
@@ -891,14 +892,14 @@ public class CommandInsightService {
         return Optional.of(new CommandInsight(title, summary, List.of(), true));
     }
 
-    private Map<CommandNode<SharedSuggestionProvider>, String> getSmartUsages(
-            CommandNode<SharedSuggestionProvider> usageParent
+    private Map<CommandNode<ClientSuggestionProvider>, String> getSmartUsages(
+            CommandNode<ClientSuggestionProvider> usageParent
     ) {
         if (minecraft.player == null || minecraft.player.connection == null) {
             return Map.of();
         }
-        CommandDispatcher<SharedSuggestionProvider> dispatcher = minecraft.player.connection.getCommands();
-        Map<CommandNode<SharedSuggestionProvider>, String> usages = dispatcher.getSmartUsage(
+        CommandDispatcher<ClientSuggestionProvider> dispatcher = minecraft.player.connection.getCommands();
+        Map<CommandNode<ClientSuggestionProvider>, String> usages = dispatcher.getSmartUsage(
                 usageParent,
                 minecraft.player.connection.getSuggestionsProvider()
         );
@@ -911,22 +912,22 @@ public class CommandInsightService {
         return usages;
     }
 
-    private Optional<CommandNode<SharedSuggestionProvider>> findParentNode(
-            CommandNode<SharedSuggestionProvider> target
+    private Optional<CommandNode<ClientSuggestionProvider>> findParentNode(
+            CommandNode<ClientSuggestionProvider> target
     ) {
         if (minecraft.player == null || minecraft.player.connection == null) {
             return Optional.empty();
         }
 
-        Queue<CommandNode<SharedSuggestionProvider>> queue = new ArrayDeque<>();
-        Set<CommandNode<SharedSuggestionProvider>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        Queue<CommandNode<ClientSuggestionProvider>> queue = new ArrayDeque<>();
+        Set<CommandNode<ClientSuggestionProvider>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         queue.add(minecraft.player.connection.getCommands().getRoot());
         while (!queue.isEmpty() && visited.size() < 2048) {
-            CommandNode<SharedSuggestionProvider> parent = queue.remove();
+            CommandNode<ClientSuggestionProvider> parent = queue.remove();
             if (!visited.add(parent)) {
                 continue;
             }
-            for (CommandNode<SharedSuggestionProvider> child : parent.getChildren()) {
+            for (CommandNode<ClientSuggestionProvider> child : parent.getChildren()) {
                 if (child == target) {
                     return Optional.of(parent);
                 }
@@ -944,19 +945,19 @@ public class CommandInsightService {
             return Optional.empty();
         }
 
-        SharedSuggestionProvider provider = minecraft.player.connection.getSuggestionsProvider();
-        CommandNode<SharedSuggestionProvider> rootNode = minecraft.player.connection.getCommands().getRoot().getChild(root);
+        ClientSuggestionProvider provider = minecraft.player.connection.getSuggestionsProvider();
+        CommandNode<ClientSuggestionProvider> rootNode = minecraft.player.connection.getCommands().getRoot().getChild(root);
         if (rootNode == null) {
             return Optional.empty();
         }
 
         Queue<TemplatePath> queue = new ArrayDeque<>();
-        Set<CommandNode<SharedSuggestionProvider>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
+        Set<CommandNode<ClientSuggestionProvider>> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         queue.add(new TemplatePath(rootNode, List.of(root)));
 
         while (!queue.isEmpty() && visited.size() < 128) {
             TemplatePath path = queue.remove();
-            CommandNode<SharedSuggestionProvider> node = path.node();
+            CommandNode<ClientSuggestionProvider> node = path.node();
             if (!visited.add(node) || path.parts().size() > 12) {
                 continue;
             }
@@ -964,7 +965,7 @@ public class CommandInsightService {
                 return Optional.of(String.join(" ", path.parts()));
             }
 
-            for (CommandNode<SharedSuggestionProvider> child : node.getChildren()) {
+            for (CommandNode<ClientSuggestionProvider> child : node.getChildren()) {
                 if (!child.canUse(provider)) {
                     continue;
                 }
@@ -979,8 +980,8 @@ public class CommandInsightService {
         return Optional.empty();
     }
 
-    private Optional<String> findRootCommand(ParseResults<SharedSuggestionProvider> parse) {
-        for (ParsedCommandNode<SharedSuggestionProvider> node : flattenNodes(parse.getContext())) {
+    private Optional<String> findRootCommand(ParseResults<ClientSuggestionProvider> parse) {
+        for (ParsedCommandNode<ClientSuggestionProvider> node : flattenNodes(parse.getContext())) {
             if (node.getNode() instanceof LiteralCommandNode && !node.getNode().getName().isBlank()) {
                 return Optional.of(node.getNode().getName());
             }
@@ -988,7 +989,7 @@ public class CommandInsightService {
         return Optional.empty();
     }
 
-    private Optional<CommandDoc> findAvailableDoc(String command, ParseResults<SharedSuggestionProvider> parse) {
+    private Optional<CommandDoc> findAvailableDoc(String command, ParseResults<ClientSuggestionProvider> parse) {
         Optional<CommandDoc> doc = CommandDocLibrary.find(command);
         if (doc.isEmpty() || !CommandDocLibrary.isModDocumented(command)) {
             return doc;
@@ -1000,8 +1001,8 @@ public class CommandInsightService {
         return parse.getContext().getRootNode().getChild(root) == null ? Optional.empty() : doc;
     }
 
-    private Optional<ParsedCommandNode<SharedSuggestionProvider>> findNodeAt(ParseResults<SharedSuggestionProvider> parse, int cursor) {
-        for (ParsedCommandNode<SharedSuggestionProvider> node : flattenNodes(parse.getContext())) {
+    private Optional<ParsedCommandNode<ClientSuggestionProvider>> findNodeAt(ParseResults<ClientSuggestionProvider> parse, int cursor) {
+        for (ParsedCommandNode<ClientSuggestionProvider> node : flattenNodes(parse.getContext())) {
             if (contains(node.getRange(), cursor)) {
                 return Optional.of(node);
             }
@@ -1009,9 +1010,9 @@ public class CommandInsightService {
         return Optional.empty();
     }
 
-    private Optional<ParsedCommandNode<SharedSuggestionProvider>> findNodeBeforeOrAt(ParseResults<SharedSuggestionProvider> parse, int cursor) {
-        ParsedCommandNode<SharedSuggestionProvider> best = null;
-        for (ParsedCommandNode<SharedSuggestionProvider> node : flattenNodes(parse.getContext())) {
+    private Optional<ParsedCommandNode<ClientSuggestionProvider>> findNodeBeforeOrAt(ParseResults<ClientSuggestionProvider> parse, int cursor) {
+        ParsedCommandNode<ClientSuggestionProvider> best = null;
+        for (ParsedCommandNode<ClientSuggestionProvider> node : flattenNodes(parse.getContext())) {
             if (node.getRange().getStart() <= cursor && (best == null || node.getRange().getStart() >= best.getRange().getStart())) {
                 best = node;
             }
@@ -1019,12 +1020,12 @@ public class CommandInsightService {
         return Optional.ofNullable(best);
     }
 
-    private Optional<ParsedCommandNode<SharedSuggestionProvider>> findNodeEndingAt(
-            ParseResults<SharedSuggestionProvider> parse,
+    private Optional<ParsedCommandNode<ClientSuggestionProvider>> findNodeEndingAt(
+            ParseResults<ClientSuggestionProvider> parse,
             int cursor
     ) {
-        ParsedCommandNode<SharedSuggestionProvider> deepest = null;
-        for (ParsedCommandNode<SharedSuggestionProvider> node : flattenNodes(parse.getContext())) {
+        ParsedCommandNode<ClientSuggestionProvider> deepest = null;
+        for (ParsedCommandNode<ClientSuggestionProvider> node : flattenNodes(parse.getContext())) {
             if (node.getRange().getEnd() == cursor
                     && (deepest == null || node.getRange().getStart() >= deepest.getRange().getStart())) {
                 deepest = node;
@@ -1033,10 +1034,10 @@ public class CommandInsightService {
         return Optional.ofNullable(deepest);
     }
 
-    private Optional<NamedArgument> findArgumentAt(ParseResults<SharedSuggestionProvider> parse, int cursor) {
-        CommandContextBuilder<SharedSuggestionProvider> context = parse.getContext();
+    private Optional<NamedArgument> findArgumentAt(ParseResults<ClientSuggestionProvider> parse, int cursor) {
+        CommandContextBuilder<ClientSuggestionProvider> context = parse.getContext();
         while (context != null) {
-            for (Map.Entry<String, ParsedArgument<SharedSuggestionProvider, ?>> entry : context.getArguments().entrySet()) {
+            for (Map.Entry<String, ParsedArgument<ClientSuggestionProvider, ?>> entry : context.getArguments().entrySet()) {
                 if (contains(entry.getValue().getRange(), cursor)) {
                     return Optional.of(new NamedArgument(entry.getKey(), entry.getValue()));
                 }
@@ -1046,24 +1047,24 @@ public class CommandInsightService {
         return Optional.empty();
     }
 
-    private Optional<ArgumentCommandNode<SharedSuggestionProvider, ?>> findArgumentNode(
-            ParseResults<SharedSuggestionProvider> parse,
+    private Optional<ArgumentCommandNode<ClientSuggestionProvider, ?>> findArgumentNode(
+            ParseResults<ClientSuggestionProvider> parse,
             String name
     ) {
-        for (ParsedCommandNode<SharedSuggestionProvider> parsedNode : flattenNodes(parse.getContext())) {
+        for (ParsedCommandNode<ClientSuggestionProvider> parsedNode : flattenNodes(parse.getContext())) {
             if (parsedNode.getNode() instanceof ArgumentCommandNode<?, ?> argumentNode && argumentNode.getName().equals(name)) {
                 @SuppressWarnings("unchecked")
-                ArgumentCommandNode<SharedSuggestionProvider, ?> typed =
-                        (ArgumentCommandNode<SharedSuggestionProvider, ?>) argumentNode;
+                ArgumentCommandNode<ClientSuggestionProvider, ?> typed =
+                        (ArgumentCommandNode<ClientSuggestionProvider, ?>) argumentNode;
                 return Optional.of(typed);
             }
         }
         return Optional.empty();
     }
 
-    private List<ParsedCommandNode<SharedSuggestionProvider>> flattenNodes(CommandContextBuilder<SharedSuggestionProvider> context) {
-        List<ParsedCommandNode<SharedSuggestionProvider>> nodes = new ArrayList<>();
-        CommandContextBuilder<SharedSuggestionProvider> current = context;
+    private List<ParsedCommandNode<ClientSuggestionProvider>> flattenNodes(CommandContextBuilder<ClientSuggestionProvider> context) {
+        List<ParsedCommandNode<ClientSuggestionProvider>> nodes = new ArrayList<>();
+        CommandContextBuilder<ClientSuggestionProvider> current = context;
         while (current != null) {
             nodes.addAll(current.getNodes());
             current = current.getChild();
@@ -1122,10 +1123,10 @@ public class CommandInsightService {
         return Math.max(min, Math.min(max, value));
     }
 
-    private record NamedArgument(String name, ParsedArgument<SharedSuggestionProvider, ?> argument) {
+    private record NamedArgument(String name, ParsedArgument<ClientSuggestionProvider, ?> argument) {
     }
 
-    private record TemplatePath(CommandNode<SharedSuggestionProvider> node, List<String> parts) {
+    private record TemplatePath(CommandNode<ClientSuggestionProvider> node, List<String> parts) {
     }
 
     private record CompositeSyntax(List<String> labels, String chineseForms, String englishForms) {

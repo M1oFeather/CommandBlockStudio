@@ -5,17 +5,20 @@ import com.miofeather.commandblockstudio.main.ui.screen.AbstractCommandBlockStud
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.*;
 import net.minecraft.client.gui.layouts.LayoutElement;
 
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.CharacterEvent;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.client.input.MouseButtonEvent;
 
 
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.util.Mth;
 import org.joml.AxisAngle4d;
 import org.joml.Quaternionf;
@@ -26,9 +29,9 @@ import java.util.List;
 
 public class SideWindow implements Renderable, GuiEventListener {
     protected static final WidgetSprites COPY_BUTTON_TEXTURES = new WidgetSprites(
-            ResourceLocation.parse("command_block_studio:button_copy_enabled"),
-            ResourceLocation.parse("command_block_studio:button_copy_disabled"),
-            ResourceLocation.parse("command_block_studio:button_copy_focused")
+            Identifier.parse("command_block_studio:button_copy_enabled"),
+            Identifier.parse("command_block_studio:button_copy_disabled"),
+            Identifier.parse("command_block_studio:button_copy_focused")
     );
 
     private static int piFraction = 4;
@@ -475,53 +478,53 @@ public class SideWindow implements Renderable, GuiEventListener {
     }
 
     @Override
-    public void render(final GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(final GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         if(!visible) return;
 
         graphics.fill(x, y, x + width, y + height, 0xFF16191E);
         graphics.fill(x, y, x + width, y + 23, 0xFF1C2026);
         graphics.fill(x, y, x + 1, y + height, 0xFF3A424C);
         graphics.fill(x, y + 23, x + width, y + 24, 0xFF343A42);
-        graphics.drawString(this.textRenderer, Component.translatable("cbs.panel.tools"), x + leftMargin, y + 8, 0xFFDDE2E7);
-        this.searchTabButton.render(graphics, mouseX, mouseY, delta);
-        this.converterTabButton.render(graphics, mouseX, mouseY, delta);
+        graphics.text(this.textRenderer, Component.translatable("cbs.panel.tools"), x + leftMargin, y + 8, 0xFFDDE2E7);
+        this.searchTabButton.extractRenderState(graphics, mouseX, mouseY, delta);
+        this.converterTabButton.extractRenderState(graphics, mouseX, mouseY, delta);
 
         if (toolView == ToolView.SEARCH) {
             refreshSearchStatusIfChanged();
-            graphics.drawString(this.textRenderer, Component.translatable("cbs.tools.search"), x + leftMargin, searchTitleY, 0xFFE6F3FF);
-            graphics.drawString(this.textRenderer, Component.translatable("cbs.tools.search.find"), x + leftMargin, searchFindLabelY, 0xFFB7C0CA);
-            graphics.drawString(this.textRenderer, Component.translatable("cbs.tools.search.replaceWith"), x + leftMargin, searchReplaceLabelY, 0xFFB7C0CA);
-            this.searchInput.render(graphics, mouseX, mouseY, delta);
-            this.replaceInput.render(graphics, mouseX, mouseY, delta);
-            this.searchPreviousButton.render(graphics, mouseX, mouseY, delta);
-            this.searchNextButton.render(graphics, mouseX, mouseY, delta);
-            this.replaceButton.render(graphics, mouseX, mouseY, delta);
-            this.replaceAllButton.render(graphics, mouseX, mouseY, delta);
-            this.matchCaseCheckbox.render(graphics, mouseX, mouseY, delta);
+            graphics.text(this.textRenderer, Component.translatable("cbs.tools.search"), x + leftMargin, searchTitleY, 0xFFE6F3FF);
+            graphics.text(this.textRenderer, Component.translatable("cbs.tools.search.find"), x + leftMargin, searchFindLabelY, 0xFFB7C0CA);
+            graphics.text(this.textRenderer, Component.translatable("cbs.tools.search.replaceWith"), x + leftMargin, searchReplaceLabelY, 0xFFB7C0CA);
+            this.searchInput.extractRenderState(graphics, mouseX, mouseY, delta);
+            this.replaceInput.extractRenderState(graphics, mouseX, mouseY, delta);
+            this.searchPreviousButton.extractRenderState(graphics, mouseX, mouseY, delta);
+            this.searchNextButton.extractRenderState(graphics, mouseX, mouseY, delta);
+            this.replaceButton.extractRenderState(graphics, mouseX, mouseY, delta);
+            this.replaceAllButton.extractRenderState(graphics, mouseX, mouseY, delta);
+            this.matchCaseCheckbox.extractRenderState(graphics, mouseX, mouseY, delta);
             int statusX = matchCaseCheckbox.getX() + matchCaseCheckbox.getWidth() + 5;
             int statusWidth = Math.max(10, x + width - leftMargin - statusX);
             String visibleStatus = textRenderer.plainSubstrByWidth(searchStatus.getString(), statusWidth);
-            graphics.drawString(this.textRenderer, visibleStatus, statusX, searchStatusY, 0xFF8A949E);
+            graphics.text(this.textRenderer, visibleStatus, statusX, searchStatusY, 0xFF8A949E);
         } else {
-            graphics.drawString(this.textRenderer, Component.translatable("cbs.tools.angle"), x + leftMargin, angleTitleY, 0xFFE6F3FF);
-            graphics.drawString(this.textRenderer, "2π / ", x + leftMargin, piFractionInput.getY(), 0xFFFFFFFF);
-            this.piFractionInput.render(graphics, mouseX, mouseY, delta);
-            this.piSlider.render(graphics, mouseX, mouseY, delta);
-            this.piOutput.render(graphics, mouseX, mouseY, delta);
-            this.piRotationIndicator.render(graphics, mouseX, mouseY, delta);
+            graphics.text(this.textRenderer, Component.translatable("cbs.tools.angle"), x + leftMargin, angleTitleY, 0xFFE6F3FF);
+            graphics.text(this.textRenderer, "2π / ", x + leftMargin, piFractionInput.getY(), 0xFFFFFFFF);
+            this.piFractionInput.extractRenderState(graphics, mouseX, mouseY, delta);
+            this.piSlider.extractRenderState(graphics, mouseX, mouseY, delta);
+            this.piOutput.extractRenderState(graphics, mouseX, mouseY, delta);
+            this.piRotationIndicator.extractRenderState(graphics, mouseX, mouseY, delta);
             graphics.fill(x + leftMargin, colorTitleY - 6, x + width - leftMargin, colorTitleY - 5, 0xFF343A42);
-            graphics.drawString(this.textRenderer, Component.translatable("cbs.tools.color"), x + leftMargin, colorTitleY, 0xFFE6F3FF);
-            this.colorPalette.render(graphics, mouseX, mouseY, delta);
-            graphics.drawString(this.textRenderer, "R:", x + leftMargin, colorTextR.getY(), 0xFFFF0000);
-            this.colorTextR.render(graphics, mouseX, mouseY, delta);
-            graphics.drawString(this.textRenderer, "G:", colorTextG.getX() - textRenderer.width("G:"), colorTextG.getY(), 0xFF00FF00);
-            this.colorTextG.render(graphics, mouseX, mouseY, delta);
-            graphics.drawString(this.textRenderer, "B:", colorTextB.getX() - textRenderer.width("B:"), colorTextB.getY(), 0xFF5C7CFA);
-            this.colorTextB.render(graphics, mouseX, mouseY, delta);
+            graphics.text(this.textRenderer, Component.translatable("cbs.tools.color"), x + leftMargin, colorTitleY, 0xFFE6F3FF);
+            this.colorPalette.extractRenderState(graphics, mouseX, mouseY, delta);
+            graphics.text(this.textRenderer, "R:", x + leftMargin, colorTextR.getY(), 0xFFFF0000);
+            this.colorTextR.extractRenderState(graphics, mouseX, mouseY, delta);
+            graphics.text(this.textRenderer, "G:", colorTextG.getX() - textRenderer.width("G:"), colorTextG.getY(), 0xFF00FF00);
+            this.colorTextG.extractRenderState(graphics, mouseX, mouseY, delta);
+            graphics.text(this.textRenderer, "B:", colorTextB.getX() - textRenderer.width("B:"), colorTextB.getY(), 0xFF5C7CFA);
+            this.colorTextB.extractRenderState(graphics, mouseX, mouseY, delta);
             graphics.fill(x + leftMargin, colorHex.getY(), x + leftMargin + 20, colorInt.getY() + 10, 0xFF000000 | ColorPicker.getInteger());
-            graphics.renderOutline(x + leftMargin, colorHex.getY(), 20, colorInt.getY() + 10 - colorHex.getY(), 0xFF8B949E);
-            this.colorHex.render(graphics, mouseX, mouseY, delta);
-            this.colorInt.render(graphics, mouseX, mouseY, delta);
+            graphics.outline(x + leftMargin, colorHex.getY(), 20, colorInt.getY() + 10 - colorHex.getY(), 0xFF8B949E);
+            this.colorHex.extractRenderState(graphics, mouseX, mouseY, delta);
+            this.colorInt.extractRenderState(graphics, mouseX, mouseY, delta);
         }
     }
 
@@ -562,13 +565,12 @@ public class SideWindow implements Renderable, GuiEventListener {
         return false;
     }
 
-    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if(!visible) return false;
         boolean widgetClicked = false;
         int index = 0;
         for(AbstractWidget w : widgets){
-            if(!widgetClicked && w.mouseClicked(mouseX, mouseY, button)){
+            if(!widgetClicked && w.mouseClicked(StudioInputEvents.mouse(mouseX, mouseY, button), false)){
                 w.setFocused(true);
                 widgetClicked = true;
                 focusedWidget = index;
@@ -587,34 +589,31 @@ public class SideWindow implements Renderable, GuiEventListener {
         return false;
     }
 
-    @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
         if(!visible) return false;
         boolean handled = false;
         for(AbstractWidget w : widgets){
-            handled |= w.mouseReleased(mouseX, mouseY, button);
+            handled |= w.mouseReleased(StudioInputEvents.mouse(mouseX, mouseY, button));
         }
         return handled;
     }
 
-    @Override
     public boolean mouseDragged(double mouseX, double mouseY, int button, double deltaX, double deltaY){
         if(!visible) return false;
         boolean handled = false;
         for(AbstractWidget w : widgets){
             if(!(w instanceof EditBox)) {
-                handled |= w.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+                handled |= w.mouseDragged(StudioInputEvents.mouse(mouseX, mouseY, button), deltaX, deltaY);
             }
         }
         return handled || (mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height);
     }
 
-    @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers){
         if(!visible) return false;
         if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
             if (searchInput.isFocused()) {
-                findMatch(Screen.hasShiftDown());
+                findMatch(Minecraft.getInstance().hasShiftDown());
                 return true;
             }
             if (replaceInput.isFocused()) {
@@ -623,10 +622,10 @@ public class SideWindow implements Renderable, GuiEventListener {
             }
         }
         for(AbstractWidget w : widgets){
-            if(w.keyPressed(keyCode, scanCode, modifiers)) return true;
+            if(w.keyPressed(StudioInputEvents.key(keyCode, scanCode, modifiers))) return true;
         }
         if (keyCode == 258) {
-            focusedWidget += Screen.hasShiftDown() ? -1 : 1;
+            focusedWidget += Minecraft.getInstance().hasShiftDown() ? -1 : 1;
             focusedWidget %= widgets.size();
             if (focusedWidget < 0) focusedWidget = widgets.size() + focusedWidget;
 
@@ -643,13 +642,37 @@ public class SideWindow implements Renderable, GuiEventListener {
         return false;
     }
 
-    @Override
     public boolean charTyped(char codePoint, int modifiers){
         if(!visible) return false;
         for(AbstractWidget w : widgets){
-            if(w.charTyped(codePoint, modifiers)) return true;
+            if(w.charTyped(StudioInputEvents.character(codePoint))) return true;
         }
         return false;
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        return mouseClicked(event.x(), event.y(), event.button());
+    }
+
+    @Override
+    public boolean mouseReleased(MouseButtonEvent event) {
+        return mouseReleased(event.x(), event.y(), event.button());
+    }
+
+    @Override
+    public boolean mouseDragged(MouseButtonEvent event, double deltaX, double deltaY) {
+        return mouseDragged(event.x(), event.y(), event.button(), deltaX, deltaY);
+    }
+
+    @Override
+    public boolean keyPressed(KeyEvent event) {
+        return keyPressed(event.key(), event.scancode(), event.modifiers());
+    }
+
+    @Override
+    public boolean charTyped(CharacterEvent event) {
+        return charTyped((char) event.codepoint(), 0);
     }
 
     private enum ToolView {

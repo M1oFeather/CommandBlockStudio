@@ -2,12 +2,13 @@ package com.miofeather.commandblockstudio.main.ui;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 
 import net.minecraft.client.gui.narration.NarrationElementOutput;
 import net.minecraft.client.gui.components.AbstractWidget;
-import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.input.MouseButtonEvent;
+import net.minecraft.client.renderer.RenderPipelines;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.network.chat.Component;
 
@@ -31,10 +32,10 @@ public class NotchedSlider extends AbstractWidget {
     }
 
     @Override
-    public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void extractWidgetRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         //RenderSystem.setShaderTexture(0, SLIDER);
         graphics.blitSprite(
-                
+                RenderPipelines.GUI_TEXTURED,
                 SLIDER,
                 512,
                 16,
@@ -46,7 +47,7 @@ public class NotchedSlider extends AbstractWidget {
                 16
         );
         graphics.blitSprite(
-                
+                RenderPipelines.GUI_TEXTURED,
                 SLIDER,
                 512,
                 16,
@@ -58,7 +59,7 @@ public class NotchedSlider extends AbstractWidget {
                 16
         );
         graphics.blitSprite(
-                
+                RenderPipelines.GUI_TEXTURED,
                 SLIDER,
                 512,
                 16,
@@ -74,7 +75,7 @@ public class NotchedSlider extends AbstractWidget {
         float step = 1.0f/((float)subdivisions);
         for(int i=1; i<subdivisions; i++){
             graphics.blitSprite(
-                    
+                    RenderPipelines.GUI_TEXTURED,
                     SLIDER_NOTCH,
                     4,
                     16,
@@ -89,7 +90,7 @@ public class NotchedSlider extends AbstractWidget {
 
         //RenderSystem.setShaderTexture(0, SLIDER_PICK);
         graphics.blitSprite(
-                
+                RenderPipelines.GUI_TEXTURED,
                 SLIDER_PICK.get(true, isHovered),
                 (int) (getX() + (pos * getWidth()) - 4),
                 getY(),
@@ -123,9 +124,8 @@ public class NotchedSlider extends AbstractWidget {
         return mouseX >= this.getX() && mouseY >= this.getY() && mouseX < this.getX() + length && mouseY < this.getY() + this.height;
     }
 
-    @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (this.isValidClickButton(button) && checkHovered(mouseX, mouseY) && this.visible) {
+        if (button == 0 && checkHovered(mouseX, mouseY) && this.visible) {
             this.dragging = true;
             this.playDownSound(Minecraft.getInstance().getSoundManager());
             this.onClick(mouseX, mouseY, button);
@@ -135,15 +135,12 @@ public class NotchedSlider extends AbstractWidget {
         return false;
     }
 
-    @Override
     public void onRelease(double mouseX, double mouseY) {
         if (this.visible) {
             this.dragging = false;
-            super.onRelease(mouseX, mouseY);
         }
     }
 
-    @Override
     public void onClick(double mouseX, double mouseY, int button) {
         if (!this.visible || !checkHovered(mouseX, mouseY)) {
             dragging = false;
@@ -181,7 +178,6 @@ public class NotchedSlider extends AbstractWidget {
         return false;
     }*/
 
-    @Override
     public void onDrag(double mouseX, double mouseY, double distX, double distY){
         if(dragging) {
             double posBefore = pos;
@@ -195,6 +191,26 @@ public class NotchedSlider extends AbstractWidget {
 
     public void setSubdivisions(int value){
         subdivisions = value;
+    }
+
+    @Override
+    public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
+        return mouseClicked(event.x(), event.y(), event.button());
+    }
+
+    @Override
+    public void onClick(MouseButtonEvent event, boolean doubleClick) {
+        onClick(event.x(), event.y(), event.button());
+    }
+
+    @Override
+    public void onRelease(MouseButtonEvent event) {
+        onRelease(event.x(), event.y());
+    }
+
+    @Override
+    protected void onDrag(MouseButtonEvent event, double deltaX, double deltaY) {
+        onDrag(event.x(), event.y(), deltaX, deltaY);
     }
 
     double snap(double x, double step){

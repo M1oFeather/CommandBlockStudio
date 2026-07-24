@@ -10,7 +10,7 @@ import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.CommandSuggestions;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -117,9 +117,9 @@ public class ChatCommandSuggestor extends CommandSuggestions {
     }
 
     @Override
-    public void render(GuiGraphics graphics, int mouseX, int mouseY) {
+    public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
         if (!isCommandMode()) {
-            super.render(graphics, mouseX, mouseY);
+            super.extractRenderState(graphics, mouseX, mouseY);
             return;
         }
 
@@ -128,7 +128,7 @@ public class ChatCommandSuggestor extends CommandSuggestions {
             preparedSuggestionWindow = null;
             suggestionVisuals = Map.of();
             suggestionIconsVisible = false;
-            renderUsage(graphics);
+            extractUsage(graphics);
             return;
         }
 
@@ -136,15 +136,15 @@ public class ChatCommandSuggestor extends CommandSuggestions {
         relocateSuggestions();
         renderSuggestionBackground(graphics, window);
         if (shouldSuppressNativeTooltip(window, mouseX, mouseY)) {
-            accessor.getSuggestions().render(graphics, Integer.MIN_VALUE, Integer.MIN_VALUE);
+            accessor.getSuggestions().extractRenderState(graphics, Integer.MIN_VALUE, Integer.MIN_VALUE);
         } else {
-            accessor.getSuggestions().render(graphics, mouseX, mouseY);
+            accessor.getSuggestions().extractRenderState(graphics, mouseX, mouseY);
         }
         renderSuggestionIcons(graphics, window);
     }
 
     @Override
-    public void renderUsage(GuiGraphics graphics) {
+    public void extractUsage(GuiGraphicsExtractor graphics) {
         int maximumRight = Math.max(8, Math.min(owner.width - 4, panelX - 6));
         int width = Math.min(accessor.getCommandUsageWidth(), Math.max(1, maximumRight - 4));
         int x = Mth.clamp(
@@ -157,7 +157,7 @@ public class ChatCommandSuggestor extends CommandSuggestions {
             int y = owner.height - 14 - 13 - 12 * row;
             graphics.fill(x - 1, y, x + width + 1, y + 12, accessor.getFillColor());
             graphics.enableScissor(x, y, x + width, y + 12);
-            graphics.drawString(accessor.getFont(), usage, x, y + 2, -1);
+            graphics.text(accessor.getFont(), usage, x, y + 2, -1);
             graphics.disableScissor();
             row++;
         }
@@ -205,7 +205,7 @@ public class ChatCommandSuggestor extends CommandSuggestions {
         window.setRect(new Rect2i(x, y, rect.getWidth(), rect.getHeight()));
     }
 
-    private void renderSuggestionBackground(GuiGraphics graphics, SuggestionWindowAccessor window) {
+    private void renderSuggestionBackground(GuiGraphicsExtractor graphics, SuggestionWindowAccessor window) {
         Rect2i rect = window.getRect();
         int left = rect.getX() - (suggestionIconsVisible ? 13 : 0);
         graphics.fill(
@@ -224,7 +224,7 @@ public class ChatCommandSuggestor extends CommandSuggestions {
         );
     }
 
-    private void renderSuggestionIcons(GuiGraphics graphics, SuggestionWindowAccessor window) {
+    private void renderSuggestionIcons(GuiGraphicsExtractor graphics, SuggestionWindowAccessor window) {
         if (!suggestionIconsVisible) {
             return;
         }

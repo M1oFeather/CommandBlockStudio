@@ -13,7 +13,7 @@ public final class CommandBlockStudioMod {
 
     public CommandBlockStudioMod(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(CommandBlockAnnotationNetwork::registerPayloads);
-        if (FMLEnvironment.dist == Dist.CLIENT) {
+        if (FMLEnvironment.getDist() == Dist.CLIENT) {
             new CommandBlockStudio(modEventBus, modContainer);
         }
     }

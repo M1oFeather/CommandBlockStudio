@@ -24,10 +24,10 @@ public class CommandBlockMixin {
     public void openCommandBlockStudioScreen(Player instance, CommandBlockEntity commandBlock){
         if(instance instanceof LocalPlayer){
             Minecraft client = ((LocalPlayerAccessor)instance).getMinecraft();
-            BlockPos workspaceRoot = client.screen instanceof CommandBlockStudioScreen studioScreen
+            BlockPos workspaceRoot = client.gui.screen() instanceof CommandBlockStudioScreen studioScreen
                     ? studioScreen.getWorkspaceRoot()
                     : commandBlock.getBlockPos();
-            client.setScreen(new CommandBlockStudioScreen(
+            client.gui.setScreen(new CommandBlockStudioScreen(
                     client,
                     commandBlock,
                     commandBlock.getCommandBlock(),

@@ -6,9 +6,7 @@ import com.miofeather.commandblockstudio.main.ui.MultiLineTextFieldWidget;
 import com.miofeather.commandblockstudio.main.ui.screen.AbstractCommandBlockStudioScreen;
 import com.miofeather.commandblockstudio.main.ui.screen.StudioScaledScreen;
 import com.miofeather.commandblockstudio.main.ui.screen.StudioUiScale;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.CommandSuggestions;
@@ -24,7 +22,6 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraft.util.Mth;
 import org.lwjgl.glfw.GLFW;
 
-@OnlyIn(Dist.CLIENT)
 public class ConfigScreen extends StudioScaledScreen {
 
     private Screen parent;
@@ -70,7 +67,7 @@ public class ConfigScreen extends StudioScaledScreen {
         }
         insightLanguage = Button.builder(Component.translatable("cbs.config.insightLanguage"), button -> {
                     if (minecraft != null) {
-                        minecraft.setScreen(new CommandInsightLanguageScreen(this));
+                        minecraft.gui.setScreen(new CommandInsightLanguageScreen(this));
                     }
                 })
                 .bounds(0, 0, 150, 20)
@@ -168,7 +165,7 @@ public class ConfigScreen extends StudioScaledScreen {
     public void onClose() {
         CommandBlockStudio.writeConfig();
         if (minecraft != null) {
-            minecraft.setScreen(parent);
+            minecraft.gui.setScreen(parent);
             if (parent instanceof AbstractCommandBlockStudioScreen) {
                 ((AbstractCommandBlockStudioScreen) parent).returnFromConfig();
             }
@@ -279,11 +276,11 @@ public class ConfigScreen extends StudioScaledScreen {
     }
 
     @Override
-    public void renderBackground(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+    public void extractBackground(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
     }
 
     @Override
-    public void render(final GuiGraphics graphics, int mouseX, int mouseY, float delta) {
+    public void extractRenderState(final GuiGraphicsExtractor graphics, int mouseX, int mouseY, float delta) {
         if (scaleLayoutDirty) {
             refreshStudioScale();
             layoutWidgets();
@@ -299,25 +296,25 @@ public class ConfigScreen extends StudioScaledScreen {
         graphics.fill(settingsPanelX, CONTENT_TOP, settingsPanelX + settingsPanelWidth, height - 8, 0xFF15191E);
         graphics.fill(settingsPanelX, CONTENT_TOP, settingsPanelX + settingsPanelWidth, CONTENT_TOP + 17, 0xFF181C21);
         graphics.fill(settingsPanelX, CONTENT_TOP + 16, settingsPanelX + settingsPanelWidth, CONTENT_TOP + 17, 0xFF343A42);
-        graphics.drawString(font, Component.translatable("cbs.config.preview"), previewPanelX + 6, CONTENT_TOP + 4, 0xFFDDE2E7);
-        graphics.drawString(font, Component.translatable("cbs.config.editorBehavior"), settingsPanelX + 6, CONTENT_TOP + 4, 0xFFDDE2E7);
-        graphics.drawString(font, Component.translatable("cbs.config.lineBreaks"), settingsInnerX, CONTENT_TOP + 21, 0xFF9AA4AF);
-        super.render(graphics, studioMouseX, studioMouseY, delta);
+        graphics.text(font, Component.translatable("cbs.config.preview"), previewPanelX + 6, CONTENT_TOP + 4, 0xFFDDE2E7);
+        graphics.text(font, Component.translatable("cbs.config.editorBehavior"), settingsPanelX + 6, CONTENT_TOP + 4, 0xFFDDE2E7);
+        graphics.text(font, Component.translatable("cbs.config.lineBreaks"), settingsInnerX, CONTENT_TOP + 21, 0xFF9AA4AF);
+        super.extractRenderState(graphics, studioMouseX, studioMouseY, delta);
         int titleLeft = parent == null ? 8 : back.getX() + back.getWidth() + 8;
         int titleRight = insightLanguage.getX() - 8;
         int titleRadius = Math.max(10, Math.min(width / 2 - titleLeft, titleRight - width / 2));
         String visibleTitle = font.plainSubstrByWidth(getTitle().getString(), titleRadius * 2);
-        graphics.drawCenteredString(font, visibleTitle, width / 2, 14, 0xFFFFFFFF);
+        graphics.centeredText(font, visibleTitle, width / 2, 14, 0xFFFFFFFF);
         if(minecraft == null || minecraft.player == null){
             int warningWidth = Math.max(0, previewPanelWidth - font.width(Component.translatable("cbs.config.preview")) - 20);
             String warning = font.plainSubstrByWidth(Component.translatable("cbs.config.colorError").getString(), warningWidth);
-            graphics.drawString(font, warning, previewPanelX + previewPanelWidth - font.width(warning) - 6, CONTENT_TOP + 4, 0xFF808A95);
+            graphics.text(font, warning, previewPanelX + previewPanelWidth - font.width(warning) - 6, CONTENT_TOP + 4, 0xFF808A95);
         }
-        graphics.drawCenteredString(font, Component.translatable("cbs.config.before"), beforeColumnCenter, CONTENT_TOP + 31, 0xFF9AA4AF);
-        graphics.drawCenteredString(font, Component.translatable("cbs.config.after"), afterColumnCenter, CONTENT_TOP + 31, 0xFF9AA4AF);
-        graphics.drawString(font, Component.literal("{"), settingsInnerX + 2, newLinePreOpen.getY() + 5, 0xFFFFFFFF);
-        graphics.drawString(font, Component.literal("}"), settingsInnerX + 2, newLinePreClose.getY() + 5, 0xFFFFFFFF);
-        graphics.drawString(font, Component.literal(","), settingsInnerX + 2, newLinePostComma.getY() + 5, 0xFFFFFFFF);
+        graphics.centeredText(font, Component.translatable("cbs.config.before"), beforeColumnCenter, CONTENT_TOP + 31, 0xFF9AA4AF);
+        graphics.centeredText(font, Component.translatable("cbs.config.after"), afterColumnCenter, CONTENT_TOP + 31, 0xFF9AA4AF);
+        graphics.text(font, Component.literal("{"), settingsInnerX + 2, newLinePreOpen.getY() + 5, 0xFFFFFFFF);
+        graphics.text(font, Component.literal("}"), settingsInnerX + 2, newLinePreClose.getY() + 5, 0xFFFFFFFF);
+        graphics.text(font, Component.literal(","), settingsInnerX + 2, newLinePostComma.getY() + 5, 0xFFFFFFFF);
         drawNumericFieldLabel(graphics, Component.translatable("cbs.config.indentation"), indentationFac, indentationLabelX);
         drawNumericFieldLabel(graphics, Component.translatable("cbs.config.wraparoundWidth.short"), wraparound, wraparoundLabelX);
         drawNumericFieldLabel(graphics, Component.translatable("cbs.config.scrollX.short"), scrollSpeedX, scrollSpeedXLabelX);
@@ -325,13 +322,13 @@ public class ConfigScreen extends StudioScaledScreen {
         endStudioRender(graphics);
     }
 
-    private void drawNumericFieldLabel(GuiGraphics graphics, Component label, EditBox field, int labelX) {
+    private void drawNumericFieldLabel(GuiGraphicsExtractor graphics, Component label, EditBox field, int labelX) {
         int availableWidth = field.getX() - labelX - 4;
         if (availableWidth <= 0) {
             return;
         }
         String visibleLabel = font.plainSubstrByWidth(label.getString(), availableWidth);
-        graphics.drawString(font, visibleLabel, labelX, field.getY() + 2, 0xFFE0E0E0);
+        graphics.text(font, visibleLabel, labelX, field.getY() + 2, 0xFFE0E0E0);
     }
 
     public void checkboxCallback(Checkbox source, boolean checked){
@@ -369,7 +366,8 @@ public class ConfigScreen extends StudioScaledScreen {
         deltaX = studioMouseDelta(deltaX);
         deltaY = studioMouseDelta(deltaY);
         if(button == 0 && getFocused() == this.textField) {
-            return this.textField.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
+            this.textField.onDrag(mouseX, mouseY, deltaX, deltaY);
+            return true;
         }
         return super.mouseDragged(mouseX, mouseY, button, deltaX, deltaY);
     }
@@ -436,7 +434,8 @@ public class ConfigScreen extends StudioScaledScreen {
         mouseX = studioMouseX(mouseX);
         mouseY = studioMouseY(mouseY);
         if(button == 0 && getFocused() == this.textField){
-            return this.textField.mouseReleased(mouseX, mouseY, button);
+            this.textField.onRelease(mouseX, mouseY);
+            return true;
         }
         return super.mouseReleased(mouseX, mouseY, button);
     }
