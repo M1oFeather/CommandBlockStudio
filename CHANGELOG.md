@@ -1,12 +1,12 @@
 # Changelog
 
-## 1.1.0 - 2026-07-23
+## 1.1.0 - Unreleased
 
 ### Command block inspection
 
 - Added command previews to command block item tooltips when the stack carries block-entity data.
 - Added last-edit time and editor metadata when the copied item carries Command Block Studio history.
-- Added an `F3+F4` work mode that renders a camera-facing holographic panel in front of the targeted command block, including command text, mode, coordinates, and last editor.
+- Added a configurable work-mode key binding, defaulting to `Alt+Tab`, that renders a camera-facing holographic panel in front of the targeted command block, including command text, mode, coordinates, and last editor.
 - Fixed long-command wrapping and horizontal scrolling so spaces retain their width and mouse/caret positions remain aligned with proportional font metrics.
 - Kept command usage, completion candidates, and completion documentation inside the editor text viewport so they flip above the active line before reaching the parameter status bar.
 
