@@ -29,7 +29,7 @@
 构建产物位于：
 
 ```text
-build/libs/command_block_studio-1.0.0-<Minecraft版本>-NeoForge.jar
+build/libs/command_block_studio-1.1.0-<Minecraft版本>-NeoForge.jar
 ```
 
 `build` 结束后会自动执行 `prepareClientRun`，确保 IDE 运行参数文件存在。
