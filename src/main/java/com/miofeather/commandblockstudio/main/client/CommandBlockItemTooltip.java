@@ -2,12 +2,11 @@ package com.miofeather.commandblockstudio.main.client;
 
 import com.miofeather.commandblockstudio.main.network.CommandBlockAnnotationNetwork;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.CustomData;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -29,12 +28,12 @@ public final class CommandBlockItemTooltip {
         if (!isCommandBlock(stack)) {
             return;
         }
-        CustomData blockEntityData = stack.get(DataComponents.BLOCK_ENTITY_DATA);
-        if (blockEntityData == null || blockEntityData.isEmpty()) {
+        CompoundTag stackTag = stack.getTag();
+        if (stackTag == null || !stackTag.contains("BlockEntityTag", Tag.TAG_COMPOUND)) {
             return;
         }
 
-        CompoundTag tag = blockEntityData.copyTag();
+        CompoundTag tag = stackTag.getCompound("BlockEntityTag");
         String command = normalizeCommand(tag.getString("Command"));
         if (!command.isBlank()) {
             event.getToolTip().add(Component.empty());

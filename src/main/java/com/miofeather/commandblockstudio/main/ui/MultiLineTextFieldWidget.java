@@ -774,7 +774,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         int start = Math.min(accessor.getCursorPos(), accessor.getHighlightPos());
         int end = Math.max(accessor.getCursorPos(), accessor.getHighlightPos());
         int k = accessor.invokeGetMaxLength() - accessor.getValue().length() - (start - end);
-        if (k < (l = (string = StringUtil.filterText(text)).length())) {
+        if (k < (l = (string = SharedConstants.filterText(text)).length())) {
             string = string.substring(0, k);
             l = k;
         }
@@ -1185,7 +1185,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         if (!this.canConsumeInput()) {
             return false;
         }
-        if (StringUtil.isAllowedChatCharacter(codePoint)) {
+        if (SharedConstants.isAllowedChatCharacter(codePoint)) {
             if (accessor.getIsEditable()) {
                 if (CommandBlockStudio.BRACKET_AUTOCOMPLETE && typePairedCharacter(codePoint)) {
                     textModified = true;

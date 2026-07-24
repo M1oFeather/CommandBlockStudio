@@ -1,27 +1,26 @@
 package com.miofeather.commandblockstudio.main.network;
 
 import com.miofeather.commandblockstudio.main.CommandBlockStudioMod;
-import io.netty.buffer.ByteBuf;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.CommandBlockEntity;
-import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlerEvent;
 import net.neoforged.neoforge.network.handling.IPayloadContext;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
+import net.neoforged.neoforge.network.registration.IPayloadRegistrar;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.concurrent.ConcurrentHashMap;
 
 public final class CommandBlockAnnotationNetwork {
@@ -40,17 +39,25 @@ public final class CommandBlockAnnotationNetwork {
     private CommandBlockAnnotationNetwork() {
     }
 
-    public static void registerPayloads(RegisterPayloadHandlersEvent event) {
+    public static void registerPayloads(RegisterPayloadHandlerEvent event) {
         // Keep every Studio payload optional so client-only and server-only installations can connect.
-        PayloadRegistrar registrar = event.registrar("2").optional();
-        registrar.playToServer(RequestAnnotation.TYPE, RequestAnnotation.STREAM_CODEC, CommandBlockAnnotationNetwork::handleRequest);
-        registrar.playToServer(UpdateAnnotation.TYPE, UpdateAnnotation.STREAM_CODEC, CommandBlockAnnotationNetwork::handleUpdate);
-        registrar.playToServer(RequestOpenCommandBlock.TYPE, RequestOpenCommandBlock.STREAM_CODEC, CommandBlockAnnotationNetwork::handleOpen);
-        registrar.playToServer(RequestCommandPreview.TYPE, RequestCommandPreview.STREAM_CODEC, CommandBlockAnnotationNetwork::handlePreviewRequest);
-        registrar.playToServer(RunCommandBlock.TYPE, RunCommandBlock.STREAM_CODEC, CommandBlockAnnotationNetwork::handleRun);
-        registrar.playToClient(SyncAnnotation.TYPE, SyncAnnotation.STREAM_CODEC, CommandBlockAnnotationNetwork::handleSync);
-        registrar.playToClient(SyncCommandPreview.TYPE, SyncCommandPreview.STREAM_CODEC, CommandBlockAnnotationNetwork::handlePreviewSync);
-        registrar.playToClient(RunCommandBlockResult.TYPE, RunCommandBlockResult.STREAM_CODEC, CommandBlockAnnotationNetwork::handleRunResult);
+        IPayloadRegistrar registrar = event.registrar(CommandBlockStudioMod.MODID).versioned("2").optional();
+        registrar.play(RequestAnnotation.ID, RequestAnnotation::new,
+                handlers -> handlers.server((payload, context) -> enqueue(payload, context, CommandBlockAnnotationNetwork::handleRequest)));
+        registrar.play(UpdateAnnotation.ID, UpdateAnnotation::new,
+                handlers -> handlers.server((payload, context) -> enqueue(payload, context, CommandBlockAnnotationNetwork::handleUpdate)));
+        registrar.play(RequestOpenCommandBlock.ID, RequestOpenCommandBlock::new,
+                handlers -> handlers.server((payload, context) -> enqueue(payload, context, CommandBlockAnnotationNetwork::handleOpen)));
+        registrar.play(RequestCommandPreview.ID, RequestCommandPreview::new,
+                handlers -> handlers.server((payload, context) -> enqueue(payload, context, CommandBlockAnnotationNetwork::handlePreviewRequest)));
+        registrar.play(RunCommandBlock.ID, RunCommandBlock::new,
+                handlers -> handlers.server((payload, context) -> enqueue(payload, context, CommandBlockAnnotationNetwork::handleRun)));
+        registrar.play(SyncAnnotation.ID, SyncAnnotation::new,
+                handlers -> handlers.client((payload, context) -> enqueue(payload, context, CommandBlockAnnotationNetwork::handleSync)));
+        registrar.play(SyncCommandPreview.ID, SyncCommandPreview::new,
+                handlers -> handlers.client((payload, context) -> enqueue(payload, context, CommandBlockAnnotationNetwork::handlePreviewSync)));
+        registrar.play(RunCommandBlockResult.ID, RunCommandBlockResult::new,
+                handlers -> handlers.client((payload, context) -> enqueue(payload, context, CommandBlockAnnotationNetwork::handleRunResult)));
     }
 
     public static void clearReceived(BlockPos pos) {
@@ -70,17 +77,19 @@ public final class CommandBlockAnnotationNetwork {
     }
 
     private static void handleRequest(RequestAnnotation payload, IPayloadContext context) {
-        if (!(context.player() instanceof ServerPlayer player)) {
+        ServerPlayer player = serverPlayer(context);
+        if (player == null) {
             return;
         }
         CommandBlockEntity commandBlock = editableCommandBlock(player, payload.pos());
         if (commandBlock != null) {
-            context.reply(createSyncPayload(payload.pos(), commandBlock));
+            context.replyHandler().send(createSyncPayload(payload.pos(), commandBlock));
         }
     }
 
     private static void handleUpdate(UpdateAnnotation payload, IPayloadContext context) {
-        if (!(context.player() instanceof ServerPlayer player)) {
+        ServerPlayer player = serverPlayer(context);
+        if (player == null) {
             return;
         }
         CommandBlockEntity commandBlock = editableCommandBlock(player, payload.pos());
@@ -99,11 +108,12 @@ public final class CommandBlockAnnotationNetwork {
             commandBlock.getPersistentData().putString(DATA_KEY, annotation);
         }
         commandBlock.setChanged();
-        context.reply(createSyncPayload(payload.pos(), commandBlock));
+        context.replyHandler().send(createSyncPayload(payload.pos(), commandBlock));
     }
 
     private static void handleOpen(RequestOpenCommandBlock payload, IPayloadContext context) {
-        if (!(context.player() instanceof ServerPlayer player)) {
+        ServerPlayer player = serverPlayer(context);
+        if (player == null) {
             return;
         }
         CommandBlockEntity commandBlock = editableCommandBlock(player, payload.pos());
@@ -113,29 +123,31 @@ public final class CommandBlockAnnotationNetwork {
     }
 
     private static void handlePreviewRequest(RequestCommandPreview payload, IPayloadContext context) {
-        if (!(context.player() instanceof ServerPlayer player)) {
+        ServerPlayer player = serverPlayer(context);
+        if (player == null) {
             return;
         }
         CommandBlockEntity commandBlock = editableCommandBlock(player, payload.pos());
-        context.reply(commandBlock == null
+        context.replyHandler().send(commandBlock == null
                 ? SyncCommandPreview.unavailable(payload.pos())
                 : createPreviewPayload(payload.pos(), commandBlock));
     }
 
     private static void handleRun(RunCommandBlock payload, IPayloadContext context) {
-        if (!(context.player() instanceof ServerPlayer player)) {
+        ServerPlayer player = serverPlayer(context);
+        if (player == null) {
             return;
         }
         CommandBlockEntity commandBlock = editableCommandBlock(player, payload.pos());
         if (commandBlock == null) {
-            context.reply(new RunCommandBlockResult(payload.pos(), false, false));
+            context.replyHandler().send(new RunCommandBlockResult(payload.pos(), false, false));
             return;
         }
 
         boolean executed = commandBlock.getCommandBlock().performCommand(player.serverLevel());
         commandBlock.setChanged();
         player.connection.send(ClientboundBlockEntityDataPacket.create(commandBlock, BlockEntity::saveWithoutMetadata));
-        context.reply(new RunCommandBlockResult(payload.pos(), true, executed));
+        context.replyHandler().send(new RunCommandBlockResult(payload.pos(), true, executed));
     }
 
     private static void handleSync(SyncAnnotation payload, IPayloadContext context) {
@@ -153,7 +165,8 @@ public final class CommandBlockAnnotationNetwork {
         String messageKey = !payload.accepted()
                 ? "cbs.runTest.denied"
                 : payload.executed() ? "cbs.runTest.success" : "cbs.runTest.skipped";
-        context.player().displayClientMessage(net.minecraft.network.chat.Component.translatable(messageKey), true);
+        context.player().ifPresent(player ->
+                player.displayClientMessage(net.minecraft.network.chat.Component.translatable(messageKey), true));
     }
 
     public static CommandVersion captureCommandVersion(ServerPlayer player, BlockPos pos) {
@@ -184,7 +197,7 @@ public final class CommandBlockAnnotationNetwork {
         }
         CompoundTag data = commandBlock.getPersistentData();
         List<EditHistoryEntry> history = new ArrayList<>(readHistory(commandBlock));
-        if (!history.isEmpty() && history.getFirst().matches(acceptedVersion)) {
+        if (!history.isEmpty() && history.get(0).matches(acceptedVersion)) {
             return;
         }
         String editorName = player.getGameProfile().getName();
@@ -315,116 +328,165 @@ public final class CommandBlockAnnotationNetwork {
         return blockEntity instanceof CommandBlockEntity commandBlock ? commandBlock : null;
     }
 
+    private static ServerPlayer serverPlayer(IPayloadContext context) {
+        return context.player()
+                .filter(ServerPlayer.class::isInstance)
+                .map(ServerPlayer.class::cast)
+                .orElse(null);
+    }
+
+    private static <T extends CustomPacketPayload> void enqueue(
+            T payload,
+            IPayloadContext context,
+            BiConsumer<T, IPayloadContext> handler
+    ) {
+        context.workHandler().execute(() -> handler.accept(payload, context));
+    }
+
     public record RequestAnnotation(BlockPos pos) implements CustomPacketPayload {
-        public static final Type<RequestAnnotation> TYPE = new Type<>(id("annotation_request"));
-        public static final StreamCodec<ByteBuf, RequestAnnotation> STREAM_CODEC = StreamCodec.composite(
-                BlockPos.STREAM_CODEC,
-                RequestAnnotation::pos,
-                RequestAnnotation::new
-        );
+        public static final ResourceLocation ID = CommandBlockAnnotationNetwork.id("annotation_request");
+
+        private RequestAnnotation(FriendlyByteBuf buffer) {
+            this(buffer.readBlockPos());
+        }
 
         @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
+        public ResourceLocation id() {
+            return ID;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(pos);
         }
     }
 
     public record UpdateAnnotation(BlockPos pos, String annotation) implements CustomPacketPayload {
-        public static final Type<UpdateAnnotation> TYPE = new Type<>(id("annotation_update"));
-        public static final StreamCodec<ByteBuf, UpdateAnnotation> STREAM_CODEC = StreamCodec.composite(
-                BlockPos.STREAM_CODEC,
-                UpdateAnnotation::pos,
-                ByteBufCodecs.stringUtf8(MAX_ANNOTATION_LENGTH),
-                UpdateAnnotation::annotation,
-                UpdateAnnotation::new
-        );
+        public static final ResourceLocation ID = CommandBlockAnnotationNetwork.id("annotation_update");
+
+        private UpdateAnnotation(FriendlyByteBuf buffer) {
+            this(buffer.readBlockPos(), buffer.readUtf(MAX_ANNOTATION_LENGTH));
+        }
 
         @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
+        public ResourceLocation id() {
+            return ID;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(pos);
+            buffer.writeUtf(annotation, MAX_ANNOTATION_LENGTH);
         }
     }
 
     public record RequestOpenCommandBlock(BlockPos pos) implements CustomPacketPayload {
-        public static final Type<RequestOpenCommandBlock> TYPE = new Type<>(id("command_block_open_request"));
-        public static final StreamCodec<ByteBuf, RequestOpenCommandBlock> STREAM_CODEC = StreamCodec.composite(
-                BlockPos.STREAM_CODEC,
-                RequestOpenCommandBlock::pos,
-                RequestOpenCommandBlock::new
-        );
+        public static final ResourceLocation ID = CommandBlockAnnotationNetwork.id("command_block_open_request");
+
+        private RequestOpenCommandBlock(FriendlyByteBuf buffer) {
+            this(buffer.readBlockPos());
+        }
 
         @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
+        public ResourceLocation id() {
+            return ID;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(pos);
         }
     }
 
     public record RequestCommandPreview(BlockPos pos) implements CustomPacketPayload {
-        public static final Type<RequestCommandPreview> TYPE = new Type<>(id("command_preview_request"));
-        public static final StreamCodec<ByteBuf, RequestCommandPreview> STREAM_CODEC = StreamCodec.composite(
-                BlockPos.STREAM_CODEC,
-                RequestCommandPreview::pos,
-                RequestCommandPreview::new
-        );
+        public static final ResourceLocation ID = CommandBlockAnnotationNetwork.id("command_preview_request");
+
+        private RequestCommandPreview(FriendlyByteBuf buffer) {
+            this(buffer.readBlockPos());
+        }
 
         @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
+        public ResourceLocation id() {
+            return ID;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(pos);
         }
     }
 
     public record RunCommandBlock(BlockPos pos) implements CustomPacketPayload {
-        public static final Type<RunCommandBlock> TYPE = new Type<>(id("command_run_request"));
-        public static final StreamCodec<ByteBuf, RunCommandBlock> STREAM_CODEC = StreamCodec.composite(
-                BlockPos.STREAM_CODEC,
-                RunCommandBlock::pos,
-                RunCommandBlock::new
-        );
+        public static final ResourceLocation ID = CommandBlockAnnotationNetwork.id("command_run_request");
+
+        private RunCommandBlock(FriendlyByteBuf buffer) {
+            this(buffer.readBlockPos());
+        }
 
         @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
+        public ResourceLocation id() {
+            return ID;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(pos);
         }
     }
 
     public record RunCommandBlockResult(BlockPos pos, boolean accepted, boolean executed) implements CustomPacketPayload {
-        public static final Type<RunCommandBlockResult> TYPE = new Type<>(id("command_run_result"));
-        public static final StreamCodec<ByteBuf, RunCommandBlockResult> STREAM_CODEC = StreamCodec.composite(
-                BlockPos.STREAM_CODEC,
-                RunCommandBlockResult::pos,
-                ByteBufCodecs.BOOL,
-                RunCommandBlockResult::accepted,
-                ByteBufCodecs.BOOL,
-                RunCommandBlockResult::executed,
-                RunCommandBlockResult::new
-        );
+        public static final ResourceLocation ID = CommandBlockAnnotationNetwork.id("command_run_result");
+
+        private RunCommandBlockResult(FriendlyByteBuf buffer) {
+            this(buffer.readBlockPos(), buffer.readBoolean(), buffer.readBoolean());
+        }
 
         @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
+        public ResourceLocation id() {
+            return ID;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(pos);
+            buffer.writeBoolean(accepted);
+            buffer.writeBoolean(executed);
         }
     }
 
     public record SyncAnnotation(BlockPos pos, String annotation, List<EditHistoryEntry> history) implements CustomPacketPayload {
-        public static final Type<SyncAnnotation> TYPE = new Type<>(id("annotation_sync"));
-        private static final StreamCodec<ByteBuf, List<EditHistoryEntry>> HISTORY_STREAM_CODEC = ByteBufCodecs.collection(
-                ArrayList::new,
-                EditHistoryEntry.STREAM_CODEC,
-                MAX_HISTORY_ENTRIES
-        );
-        public static final StreamCodec<ByteBuf, SyncAnnotation> STREAM_CODEC = StreamCodec.composite(
-                BlockPos.STREAM_CODEC,
-                SyncAnnotation::pos,
-                ByteBufCodecs.stringUtf8(MAX_ANNOTATION_LENGTH),
-                SyncAnnotation::annotation,
-                HISTORY_STREAM_CODEC,
-                SyncAnnotation::history,
-                SyncAnnotation::new
-        );
+        public static final ResourceLocation ID = CommandBlockAnnotationNetwork.id("annotation_sync");
+
+        private SyncAnnotation(FriendlyByteBuf buffer) {
+            this(buffer.readBlockPos(), buffer.readUtf(MAX_ANNOTATION_LENGTH), readHistory(buffer));
+        }
 
         @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
+        public ResourceLocation id() {
+            return ID;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(pos);
+            buffer.writeUtf(annotation, MAX_ANNOTATION_LENGTH);
+            int count = Math.min(history.size(), MAX_HISTORY_ENTRIES);
+            buffer.writeVarInt(count);
+            for (int i = 0; i < count; i++) {
+                history.get(i).write(buffer);
+            }
+        }
+
+        private static List<EditHistoryEntry> readHistory(FriendlyByteBuf buffer) {
+            int count = buffer.readVarInt();
+            if (count < 0 || count > MAX_HISTORY_ENTRIES) {
+                throw new IllegalArgumentException("Invalid command block history entry count: " + count);
+            }
+            List<EditHistoryEntry> entries = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                entries.add(EditHistoryEntry.read(buffer));
+            }
+            return List.copyOf(entries);
         }
     }
 
@@ -438,37 +500,20 @@ public final class CommandBlockAnnotationNetwork {
             long timestamp,
             String editor
     ) implements CustomPacketPayload {
-        public static final Type<SyncCommandPreview> TYPE = new Type<>(id("command_preview_sync"));
-        public static final StreamCodec<ByteBuf, SyncCommandPreview> STREAM_CODEC = new StreamCodec<>() {
-            @Override
-            public SyncCommandPreview decode(ByteBuf buffer) {
-                BlockPos pos = BlockPos.STREAM_CODEC.decode(buffer);
-                boolean available = ByteBufCodecs.BOOL.decode(buffer);
-                String command = ByteBufCodecs.stringUtf8(MAX_COMMAND_LENGTH).decode(buffer);
-                int modeIndex = ByteBufCodecs.VAR_INT.decode(buffer);
-                CommandBlockEntity.Mode[] modes = CommandBlockEntity.Mode.values();
-                CommandBlockEntity.Mode mode = modeIndex >= 0 && modeIndex < modes.length
-                        ? modes[modeIndex]
-                        : CommandBlockEntity.Mode.REDSTONE;
-                boolean conditional = ByteBufCodecs.BOOL.decode(buffer);
-                boolean automatic = ByteBufCodecs.BOOL.decode(buffer);
-                long timestamp = ByteBufCodecs.VAR_LONG.decode(buffer);
-                String editor = ByteBufCodecs.stringUtf8(MAX_EDITOR_NAME_LENGTH).decode(buffer);
-                return new SyncCommandPreview(pos, available, command, mode, conditional, automatic, timestamp, editor);
-            }
+        public static final ResourceLocation ID = CommandBlockAnnotationNetwork.id("command_preview_sync");
 
-            @Override
-            public void encode(ByteBuf buffer, SyncCommandPreview payload) {
-                BlockPos.STREAM_CODEC.encode(buffer, payload.pos());
-                ByteBufCodecs.BOOL.encode(buffer, payload.available());
-                ByteBufCodecs.stringUtf8(MAX_COMMAND_LENGTH).encode(buffer, payload.command());
-                ByteBufCodecs.VAR_INT.encode(buffer, payload.mode().ordinal());
-                ByteBufCodecs.BOOL.encode(buffer, payload.conditional());
-                ByteBufCodecs.BOOL.encode(buffer, payload.automatic());
-                ByteBufCodecs.VAR_LONG.encode(buffer, payload.timestamp());
-                ByteBufCodecs.stringUtf8(MAX_EDITOR_NAME_LENGTH).encode(buffer, payload.editor());
-            }
-        };
+        private SyncCommandPreview(FriendlyByteBuf buffer) {
+            this(
+                    buffer.readBlockPos(),
+                    buffer.readBoolean(),
+                    buffer.readUtf(MAX_COMMAND_LENGTH),
+                    readMode(buffer.readVarInt()),
+                    buffer.readBoolean(),
+                    buffer.readBoolean(),
+                    buffer.readVarLong(),
+                    buffer.readUtf(MAX_EDITOR_NAME_LENGTH)
+            );
+        }
 
         private static SyncCommandPreview unavailable(BlockPos pos) {
             return new SyncCommandPreview(
@@ -484,8 +529,20 @@ public final class CommandBlockAnnotationNetwork {
         }
 
         @Override
-        public Type<? extends CustomPacketPayload> type() {
-            return TYPE;
+        public ResourceLocation id() {
+            return ID;
+        }
+
+        @Override
+        public void write(FriendlyByteBuf buffer) {
+            buffer.writeBlockPos(pos);
+            buffer.writeBoolean(available);
+            buffer.writeUtf(command, MAX_COMMAND_LENGTH);
+            buffer.writeVarInt(mode.ordinal());
+            buffer.writeBoolean(conditional);
+            buffer.writeBoolean(automatic);
+            buffer.writeVarLong(timestamp);
+            buffer.writeUtf(editor, MAX_EDITOR_NAME_LENGTH);
         }
 
         public CommandPreviewSnapshot snapshot() {
@@ -529,45 +586,29 @@ public final class CommandBlockAnnotationNetwork {
             boolean conditional,
             boolean automatic
     ) {
-        public static final StreamCodec<ByteBuf, EditHistoryEntry> STREAM_CODEC = new StreamCodec<>() {
-            @Override
-            public EditHistoryEntry decode(ByteBuf buffer) {
-                long timestamp = ByteBufCodecs.VAR_LONG.decode(buffer);
-                String editor = ByteBufCodecs.stringUtf8(MAX_EDITOR_NAME_LENGTH).decode(buffer);
-                boolean snapshotAvailable = ByteBufCodecs.BOOL.decode(buffer);
-                String command = ByteBufCodecs.stringUtf8(MAX_COMMAND_LENGTH).decode(buffer);
-                int modeIndex = ByteBufCodecs.VAR_INT.decode(buffer);
-                CommandBlockEntity.Mode[] modes = CommandBlockEntity.Mode.values();
-                CommandBlockEntity.Mode mode = modeIndex >= 0 && modeIndex < modes.length
-                        ? modes[modeIndex]
-                        : CommandBlockEntity.Mode.REDSTONE;
-                boolean trackOutput = ByteBufCodecs.BOOL.decode(buffer);
-                boolean conditional = ByteBufCodecs.BOOL.decode(buffer);
-                boolean automatic = ByteBufCodecs.BOOL.decode(buffer);
-                return new EditHistoryEntry(
-                        timestamp,
-                        editor,
-                        snapshotAvailable,
-                        command,
-                        mode,
-                        trackOutput,
-                        conditional,
-                        automatic
-                );
-            }
+        private static EditHistoryEntry read(FriendlyByteBuf buffer) {
+            return new EditHistoryEntry(
+                    buffer.readVarLong(),
+                    buffer.readUtf(MAX_EDITOR_NAME_LENGTH),
+                    buffer.readBoolean(),
+                    buffer.readUtf(MAX_COMMAND_LENGTH),
+                    readMode(buffer.readVarInt()),
+                    buffer.readBoolean(),
+                    buffer.readBoolean(),
+                    buffer.readBoolean()
+            );
+        }
 
-            @Override
-            public void encode(ByteBuf buffer, EditHistoryEntry entry) {
-                ByteBufCodecs.VAR_LONG.encode(buffer, entry.timestamp());
-                ByteBufCodecs.stringUtf8(MAX_EDITOR_NAME_LENGTH).encode(buffer, entry.editor());
-                ByteBufCodecs.BOOL.encode(buffer, entry.snapshotAvailable());
-                ByteBufCodecs.stringUtf8(MAX_COMMAND_LENGTH).encode(buffer, entry.command());
-                ByteBufCodecs.VAR_INT.encode(buffer, entry.mode().ordinal());
-                ByteBufCodecs.BOOL.encode(buffer, entry.trackOutput());
-                ByteBufCodecs.BOOL.encode(buffer, entry.conditional());
-                ByteBufCodecs.BOOL.encode(buffer, entry.automatic());
-            }
-        };
+        private void write(FriendlyByteBuf buffer) {
+            buffer.writeVarLong(timestamp);
+            buffer.writeUtf(editor, MAX_EDITOR_NAME_LENGTH);
+            buffer.writeBoolean(snapshotAvailable);
+            buffer.writeUtf(command, MAX_COMMAND_LENGTH);
+            buffer.writeVarInt(mode.ordinal());
+            buffer.writeBoolean(trackOutput);
+            buffer.writeBoolean(conditional);
+            buffer.writeBoolean(automatic);
+        }
 
         private static EditHistoryEntry snapshot(long timestamp, String editor, CommandVersion version) {
             return new EditHistoryEntry(
@@ -593,6 +634,11 @@ public final class CommandBlockAnnotationNetwork {
     }
 
     private static ResourceLocation id(String path) {
-        return ResourceLocation.fromNamespaceAndPath(CommandBlockStudioMod.MODID, path);
+        return new ResourceLocation(CommandBlockStudioMod.MODID, path);
+    }
+
+    private static CommandBlockEntity.Mode readMode(int ordinal) {
+        CommandBlockEntity.Mode[] modes = CommandBlockEntity.Mode.values();
+        return ordinal >= 0 && ordinal < modes.length ? modes[ordinal] : CommandBlockEntity.Mode.REDSTONE;
     }
 }

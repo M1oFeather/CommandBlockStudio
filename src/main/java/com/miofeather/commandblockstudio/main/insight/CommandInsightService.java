@@ -22,6 +22,7 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -284,8 +285,8 @@ public class CommandInsightService {
             if (enchantment.isPresent()) {
                 Enchantment value = enchantment.get();
                 String summary = chinese
-                        ? value.description().getString() + "；可用等级 1 至 " + value.getMaxLevel()
-                        : value.description().getString() + "; levels 1 to " + value.getMaxLevel();
+                        ? Component.translatable(value.getDescriptionId()).getString() + "；可用等级 1 至 " + value.getMaxLevel()
+                        : Component.translatable(value.getDescriptionId()).getString() + "; levels 1 to " + value.getMaxLevel();
                 return Optional.of(new CommandInsight(id.toString(), summary, List.of("enchant @s " + id + " 1"), true));
             }
         }
@@ -797,7 +798,7 @@ public class CommandInsightService {
         ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
         Optional<CommandDoc> doc = parse == null ? Optional.empty() : findAvailableDoc(root, parse);
         if (doc.isPresent() && !doc.get().examples().isEmpty()) {
-            return Optional.of(doc.get().examples().getFirst());
+            return Optional.of(doc.get().examples().get(0));
         }
         return buildDynamicTemplate(root);
     }

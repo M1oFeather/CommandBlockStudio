@@ -9,8 +9,6 @@ import com.mojang.brigadier.context.SuggestionContext;
 import com.mojang.brigadier.tree.ArgumentCommandNode;
 import com.mojang.brigadier.tree.CommandNode;
 import net.minecraft.commands.SharedSuggestionProvider;
-import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.registries.BuiltInRegistries;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -63,7 +61,7 @@ final class StructuredArgumentCompletion {
         }
         return switch (context.get().kind()) {
             case TEXT_COMPONENT -> textComponentHint(command, cursor, context.get().start(), false);
-            case ITEM -> itemComponentHint(command, cursor, context.get().start());
+            case ITEM -> Optional.empty();
         };
     }
 
@@ -81,7 +79,7 @@ final class StructuredArgumentCompletion {
         }
         return switch (context.get().kind()) {
             case TEXT_COMPONENT -> describeTextCursor(command, cursor, context.get().start(), false);
-            case ITEM -> describeItemCursor(command, cursor, context.get().start());
+            case ITEM -> Optional.empty();
         };
     }
 
@@ -106,16 +104,7 @@ final class StructuredArgumentCompletion {
             }
             return componentField(position.kind(), key).map(FieldDoc::insight);
         }
-
-        Optional<ItemPosition> item = analyzeItem(command, cursor, context.get().start());
-        if (item.isEmpty()) {
-            return Optional.empty();
-        }
-        String key = item.get().key();
-        if (item.get().phase() == ItemPhase.KEY) {
-            key = normalizeItemComponentKey(suggestion);
-        }
-        return key == null || key.isBlank() ? Optional.empty() : Optional.of(itemDoc(key).insight());
+        return Optional.empty();
     }
 
     private static Optional<ArgumentContext> findArgumentContext(
@@ -255,15 +244,15 @@ final class StructuredArgumentCompletion {
         if (partial != null && partial.quoted()) {
             replacementStart = componentStart + partial.start() + 1;
             suggestions = available.stream().map(FieldDoc::key).toList();
-            template = available.getFirst().key();
+            template = available.get(0).key();
         } else if (partial != null) {
             replacementStart = componentStart + partial.start();
             suggestions = available.stream().map(FieldDoc::key).toList();
-            template = available.getFirst().key();
+            template = available.get(0).key();
         } else {
             replacementStart = cursor;
             suggestions = available.stream().map(FieldDoc::keySuggestion).toList();
-            template = available.getFirst().keyTemplate();
+            template = available.get(0).keyTemplate();
         }
         return Optional.of(hint(
                 command,
@@ -366,10 +355,10 @@ final class StructuredArgumentCompletion {
             if (componentIds.isEmpty()) {
                 return Optional.empty();
             }
-            String firstKey = normalizeItemComponentKey(componentIds.getFirst());
+            String firstKey = normalizeItemComponentKey(componentIds.get(0));
             ItemComponentDoc firstDoc = itemDoc(firstKey);
             String template = position.removed()
-                    ? componentIds.getFirst()
+                    ? componentIds.get(0)
                     : itemComponentId(firstKey) + "=" + firstDoc.template();
             return Optional.of(hint(
                     command,
@@ -591,21 +580,11 @@ final class StructuredArgumentCompletion {
     }
 
     private static List<String> itemComponentIds() {
-        return BuiltInRegistries.DATA_COMPONENT_TYPE.entrySet().stream()
-                .filter(entry -> {
-                    DataComponentType<?> type = entry.getValue();
-                    return type != null && !type.isTransient();
-                })
-                .map(entry -> entry.getKey().location().toString())
-                .sorted()
-                .toList();
+        return List.of();
     }
 
     private static String itemComponentId(String normalizedKey) {
-        return itemComponentIds().stream()
-                .filter(id -> normalizeItemComponentKey(id).equals(normalizedKey))
-                .findFirst()
-                .orElse("minecraft:" + normalizedKey);
+        return normalizedKey.indexOf(':') >= 0 ? normalizedKey : "minecraft:" + normalizedKey;
     }
 
     private static ItemComponentDoc itemDoc(String rawKey) {
@@ -1175,7 +1154,7 @@ final class StructuredArgumentCompletion {
         }
 
         String keySuggestion() {
-            return "\"" + key + "\":" + values.getFirst();
+            return "\"" + key + "\":" + values.get(0);
         }
 
         String keyTemplate() {

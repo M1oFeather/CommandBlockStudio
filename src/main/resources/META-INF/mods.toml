@@ -1,4 +1,4 @@
-# This is an example neoforge.mods.toml file. It contains the data relating to the loading mods.
+# This file follows the official NeoForge 1.20.4 MDK metadata layout.
 # There are several mandatory fields (#mandatory), and many more that are optional (#optional).
 # The overall format is standard TOML format, v0.5.0.
 # Note that there are a couple of TOML lists in this file.
@@ -41,6 +41,10 @@ logoFile="icon.png" #optional
 # The authors of the mod, displayed in the mod UI (optional)
 authors="MioFeather"
 
+# Client and server installations are independent. Optional network features
+# are negotiated at runtime when both sides provide a compatible channel.
+displayTest="NONE"
+
 # The description text for the mod (multi line!) (#mandatory)
 description='''
 A native NeoForge command block workbench with an IDE-style editor, Brigadier completion,
@@ -69,7 +73,7 @@ config="${mod_id}.mixins.json"
     # Optional field describing why the dependency is required or why it is incompatible
     # reason="..."
     # The version range of the dependency
-    versionRange="[${neo_version},)" #mandatory
+    versionRange="${neo_version_range}" #mandatory
     # An ordering relationship for the dependency.
     # BEFORE - This mod is loaded BEFORE the dependency
     # AFTER - This mod is loaded AFTER the dependency

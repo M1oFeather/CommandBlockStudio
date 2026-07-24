@@ -9,6 +9,7 @@ import com.miofeather.commandblockstudio.main.ui.StudioIconButton;
 import com.miofeather.commandblockstudio.main.util.Pair;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.core.BlockPos;
@@ -251,7 +252,7 @@ public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
             if (target.targets().size() > 1) {
                 tabButton = addRenderableWidget(new WorkspaceGroupTabButton(target, current));
             } else {
-                TabTarget single = target.targets().getFirst();
+                TabTarget single = target.targets().get(0);
                 WorkspaceTabButton singleButton = addRenderableWidget(new WorkspaceTabButton(
                         single.label(),
                         single.kind(),
@@ -661,7 +662,10 @@ public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
             return;
         }
         if (client.level != null && client.getConnection() != null
-                && client.getConnection().hasChannel(CommandBlockAnnotationNetwork.RequestOpenCommandBlock.TYPE)) {
+                && NetworkRegistry.getInstance().isConnected(
+                        client.getConnection(),
+                        CommandBlockAnnotationNetwork.RequestOpenCommandBlock.ID
+                )) {
             BlockEntity target = client.level.getBlockEntity(position);
             if (target instanceof CommandBlockEntity commandBlock) {
                 client.setScreen(new CommandBlockStudioScreen(
@@ -801,7 +805,10 @@ public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
     protected boolean canRunTest() {
         return minecraft != null
                 && minecraft.getConnection() != null
-                && minecraft.getConnection().hasChannel(CommandBlockAnnotationNetwork.RunCommandBlock.TYPE);
+                && NetworkRegistry.getInstance().isConnected(
+                        minecraft.getConnection(),
+                        CommandBlockAnnotationNetwork.RunCommandBlock.ID
+                );
     }
 
     @Override

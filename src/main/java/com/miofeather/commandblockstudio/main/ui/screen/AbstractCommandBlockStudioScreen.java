@@ -36,6 +36,7 @@ import net.minecraft.world.level.BaseCommandBlock;
 import net.minecraft.world.level.block.entity.CommandBlockEntity;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
@@ -525,8 +526,14 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
         return getAnnotationTarget().isPresent()
                 && minecraft != null
                 && minecraft.getConnection() != null
-                && minecraft.getConnection().hasChannel(CommandBlockAnnotationNetwork.RequestAnnotation.TYPE)
-                && minecraft.getConnection().hasChannel(CommandBlockAnnotationNetwork.UpdateAnnotation.TYPE);
+                && NetworkRegistry.getInstance().isConnected(
+                        minecraft.getConnection(),
+                        CommandBlockAnnotationNetwork.RequestAnnotation.ID
+                )
+                && NetworkRegistry.getInstance().isConnected(
+                        minecraft.getConnection(),
+                        CommandBlockAnnotationNetwork.UpdateAnnotation.ID
+                );
     }
 
     private void requestAnnotation() {

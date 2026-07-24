@@ -3,6 +3,7 @@
 .vscode/
 build/
 run/
+runs/
 run-data/
 site/
 .venv-docs/

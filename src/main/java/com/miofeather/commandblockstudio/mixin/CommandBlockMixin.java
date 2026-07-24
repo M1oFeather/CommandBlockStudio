@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(CommandBlock.class)
 public class CommandBlockMixin {
 
-    @Redirect(method= "useWithoutItem",
+    @Redirect(method= "use",
     at=@At(value="INVOKE", target= "Lnet/minecraft/world/entity/player/Player;openCommandBlock(Lnet/minecraft/world/level/block/entity/CommandBlockEntity;)V"))
     public void openCommandBlockStudioScreen(Player instance, CommandBlockEntity commandBlock){
         if(instance instanceof LocalPlayer){

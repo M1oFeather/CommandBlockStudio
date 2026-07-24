@@ -24,7 +24,8 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.event.TickEvent;
+import net.neoforged.neoforge.network.registration.NetworkRegistry;
 import org.joml.Matrix4f;
 
 import java.time.Instant;
@@ -62,7 +63,10 @@ public final class CommandBlockWorkMode {
     }
 
     @SubscribeEvent
-    public void onClientTick(ClientTickEvent.Post event) {
+    public void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
         Minecraft client = Minecraft.getInstance();
         if (!enabled || client.player == null || client.level == null || client.screen != null) {
             clearTarget();
@@ -94,7 +98,10 @@ public final class CommandBlockWorkMode {
         }
         nextRefreshAt = now + REFRESH_INTERVAL_MILLIS;
         if (client.getConnection() != null
-                && client.getConnection().hasChannel(CommandBlockAnnotationNetwork.RequestCommandPreview.TYPE)) {
+                && NetworkRegistry.getInstance().isConnected(
+                        client.getConnection(),
+                        CommandBlockAnnotationNetwork.RequestCommandPreview.ID
+                )) {
             client.getConnection().send(new CommandBlockAnnotationNetwork.RequestCommandPreview(target));
             return;
         }
@@ -214,10 +221,14 @@ public final class CommandBlockWorkMode {
             float bottom,
             int color
     ) {
-        consumer.addVertex(matrix, left, bottom, 0.01F).setColor(color).setLight(LightTexture.FULL_BRIGHT);
-        consumer.addVertex(matrix, right, bottom, 0.01F).setColor(color).setLight(LightTexture.FULL_BRIGHT);
-        consumer.addVertex(matrix, right, top, 0.01F).setColor(color).setLight(LightTexture.FULL_BRIGHT);
-        consumer.addVertex(matrix, left, top, 0.01F).setColor(color).setLight(LightTexture.FULL_BRIGHT);
+        int alpha = color >>> 24;
+        int red = color >> 16 & 0xFF;
+        int green = color >> 8 & 0xFF;
+        int blue = color & 0xFF;
+        consumer.vertex(matrix, left, bottom, 0.01F).color(red, green, blue, alpha).uv2(LightTexture.FULL_BRIGHT).endVertex();
+        consumer.vertex(matrix, right, bottom, 0.01F).color(red, green, blue, alpha).uv2(LightTexture.FULL_BRIGHT).endVertex();
+        consumer.vertex(matrix, right, top, 0.01F).color(red, green, blue, alpha).uv2(LightTexture.FULL_BRIGHT).endVertex();
+        consumer.vertex(matrix, left, top, 0.01F).color(red, green, blue, alpha).uv2(LightTexture.FULL_BRIGHT).endVertex();
     }
 
     private static Optional<TargetedCommandBlock> pointedCommandBlock(Minecraft client) {
@@ -242,7 +253,7 @@ public final class CommandBlockWorkMode {
             return Optional.empty();
         }
         CommandBlockAnnotationNetwork.LatestEditInfo latest = CommandBlockAnnotationNetwork
-                .latestEditFromBlockEntityData(commandBlock.saveWithoutMetadata(client.level.registryAccess()))
+                .latestEditFromBlockEntityData(commandBlock.saveWithoutMetadata())
                 .orElse(new CommandBlockAnnotationNetwork.LatestEditInfo(0L, ""));
         return Optional.of(new CommandBlockAnnotationNetwork.CommandPreviewSnapshot(
                 true,

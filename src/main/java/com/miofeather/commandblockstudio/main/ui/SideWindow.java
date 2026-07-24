@@ -26,9 +26,9 @@ import java.util.List;
 
 public class SideWindow implements Renderable, GuiEventListener {
     protected static final WidgetSprites COPY_BUTTON_TEXTURES = new WidgetSprites(
-            ResourceLocation.parse("command_block_studio:button_copy_enabled"),
-            ResourceLocation.parse("command_block_studio:button_copy_disabled"),
-            ResourceLocation.parse("command_block_studio:button_copy_focused")
+            ResourceLocation.tryParse("command_block_studio:button_copy_enabled"),
+            ResourceLocation.tryParse("command_block_studio:button_copy_disabled"),
+            ResourceLocation.tryParse("command_block_studio:button_copy_focused")
     );
 
     private static int piFraction = 4;
