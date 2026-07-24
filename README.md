@@ -5,12 +5,12 @@
 <h1 align="center">Command Block Studio</h1>
 
 <p align="center">
-  <em>A NeoForge-native command block editor upgrade for Minecraft 1.21.1</em>
+  <em>A NeoForge-native command block development workspace for multiple Minecraft versions</em>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Minecraft-1.21.1-brightgreen?style=flat-square" alt="Minecraft 1.21.1">
-  <img src="https://img.shields.io/badge/NeoForge-21.1.217-blue?style=flat-square" alt="NeoForge 21.1.217">
+  <img src="https://img.shields.io/badge/Minecraft-1.21.1%20%7C%201.21.4%20%7C%2026.2-brightgreen?style=flat-square" alt="Minecraft 1.21.1, 1.21.4 and 26.2">
+  <img src="https://img.shields.io/badge/NeoForge-Native-blue?style=flat-square" alt="NeoForge Native">
   <img src="https://img.shields.io/badge/Java-21-orange?style=flat-square" alt="Java 21">
   <img src="https://img.shields.io/badge/Version-1.1.0-purple?style=flat-square" alt="Version 1.1.0">
   <img src="https://img.shields.io/badge/Install-Client%20%2F%20Server%20Independent-lightgrey?style=flat-square" alt="Client and server installations are independent">
@@ -21,7 +21,7 @@
 
 ## 简介
 
-**Command Block Studio** 是面向 Minecraft 1.21.1 NeoForge 的原生命令方块开发工作台。
+**Command Block Studio** 是面向 Minecraft `1.21.1`、`1.21.4` 与 `26.2` 的 NeoForge 原生命令方块开发工作台。
 
 它会替换原版命令方块编辑界面，把单行输入框升级为接近代码编辑器的命令工作台，并提供多行可视排版、Brigadier 补全、快速文档、参数填入、问题诊断、输出面板和区域选择辅助。客户端与服务端可以完全独立安装：客户端单独安装即可使用编辑器，服务端单独安装也不会阻止原版客户端连接；双端都安装时会额外启用共享注释、版本化编辑记录和增强的工作区同步。
 
@@ -31,13 +31,15 @@
 
 ---
 
-## 前置依赖
+## 支持版本
 
-| 依赖 | 说明 |
-| --- | --- |
-| **Minecraft 1.21.1** | 游戏本体 |
-| **NeoForge 21.1.217** | 目标加载器版本 |
-| **Java 21** | 构建与运行环境 |
+| Minecraft | NeoForge | Git 分支 | 构建文件 |
+| --- | --- | --- | --- |
+| `1.21.1` | `21.1.217` | `1.21.1`（默认分支） | `command_block_studio-<模组版本>-1.21.1-NeoForge.jar` |
+| `1.21.4` | `21.4.157` | `1.21.4` | `command_block_studio-<模组版本>-1.21.4-NeoForge.jar` |
+| `26.2` | `26.2.0.32-beta` | `26.2` | `command_block_studio-<模组版本>-26.2-NeoForge.jar` |
+
+三个版本均使用 Java 21。下载时请让文件名中的 Minecraft 版本与游戏实例完全一致；详细选择方法见[版本选择](docs/releases/versions.md)。
 
 ---
 
@@ -68,7 +70,7 @@
 - **当前参数提示**：光标所在参数会在编辑器底部显示简短解释，接近代码编辑器的 signature help。
 - **原生自动补全**：补全候选来自当前连接的 Brigadier 命令树，并在光标后显示灰色幽灵文本；悬停候选项可查看对应命令或参数说明。
 - **文本 Component 补全**：在 `tellraw`、`title` 等富文本参数中继续解析未闭合 JSON，补全 `text`、`translate`、`score`、`selector`、`nbt`、样式字段以及 `clickEvent` / `hoverEvent` 的嵌套结构；快速文档会跟随当前字段和选中候选。
-- **物品数据组件补全**：`give` 等物品参数的组件键直接取自当前 1.21.1 `DATA_COMPONENT_TYPE` 注册表，并为常用组件提供值模板与说明；`custom_name`、`item_name`、`lore` 中嵌套的文本 Component 也会继续补全。
+- **物品数据组件补全**：`give` 等物品参数的组件键直接取自当前游戏版本的 `DATA_COMPONENT_TYPE` 注册表，并为常用组件提供值模板与说明；`custom_name`、`item_name`、`lore` 中嵌套的文本 Component 也会继续补全。
 - **语义化候选**：方块候选显示实际方块图标、方块名称和状态属性；附魔候选显示本地化名称与等级范围；玩家候选优先排列 Tab 在线玩家并显示皮肤头像，其他玩家名使用稳定的原版默认头像。
 - **编辑器式补全**：`Ctrl+Space` 随时打开补全列表，`Enter` 或 `Tab` 接受当前候选，方向键切换候选。
 - **清晰反馈**：参数状态栏会完整换行显示，保存成功消息以标题和命令预览分行呈现。
@@ -146,7 +148,7 @@ src/main/resources/
 
 ### 打开界面
 
-1. 要使用 Studio 界面时，将模组安装到 NeoForge 1.21.1 客户端；服务端是否安装不影响客户端连接。
+1. 要使用 Studio 界面时，将与当前 Minecraft 版本匹配的 NeoForge 构建安装到客户端；服务端是否安装不影响客户端连接。
 2. 进入拥有命令方块编辑权限的世界或服务器。
 3. 打开命令方块或命令方块矿车，界面会自动替换为增强版编辑器。
 
@@ -243,7 +245,7 @@ IDE 的 `Client` 配置会读取 ModDevGradle 生成的 `build/moddev/clientRunV
 构建产物输出到：
 
 ```text
-build/libs/command_block_studio-1.1.0-1.21.1-NeoForge.jar
+build/libs/command_block_studio-1.1.0-<Minecraft版本>-NeoForge.jar
 ```
 
 ### 文档站
@@ -296,7 +298,7 @@ GitHub Pages 工作流位于 [`.github/workflows/docs.yml`](.github/workflows/do
   </tr>
   <tr>
     <td align="center"><b>原生平台</b></td>
-    <td>Minecraft 1.21.1 · NeoForge 21.1.217</td>
+    <td>Minecraft 1.21.1 / 1.21.4 / 26.2 · NeoForge</td>
   </tr>
   <tr>
     <td align="center"><b>许可证</b></td>

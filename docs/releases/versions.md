@@ -13,7 +13,7 @@ Command Block Studio 的模组版本与 Minecraft 版本是两个不同维度。
 
 | Minecraft | Git 分支 | 文件名格式 | 文档 |
 | --- | --- | --- | --- |
-| `1.21.1` | `master` / `1.21.1` | `command_block_studio-<模组版本>-1.21.1-NeoForge.jar` | 公用文档源 |
+| `1.21.1` | `1.21.1`（默认分支） | `command_block_studio-<模组版本>-1.21.1-NeoForge.jar` | 公用文档源 |
 | `1.21.4` | `1.21.4` | `command_block_studio-<模组版本>-1.21.4-NeoForge.jar` | 使用公用文档 |
 | `26.2` | `26.2` | `command_block_studio-<模组版本>-26.2-NeoForge.jar` | 使用公用文档 |
 
@@ -43,7 +43,7 @@ git switch 1.21.4
 git switch 26.2
 ```
 
-`master` 与 `1.21.1` 必须保持完全一致。公共文档只从 `master` 部署；修改其他版本代码时，不要复制一套新的发布文档。
+`1.21.1` 是仓库默认分支和公共文档唯一事实源。修改其他版本代码时，不要复制一套新的发布文档。
 
 切换后执行：
 

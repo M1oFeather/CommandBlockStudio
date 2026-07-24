@@ -20,7 +20,7 @@
 | `1.21.4` | NeoForge | `command_block_studio-1.1.0-1.21.4-NeoForge.jar` |
 | `26.2` | NeoForge | `command_block_studio-1.1.0-26.2-NeoForge.jar` |
 
-三个 Minecraft 版本由 `1.21.1`、`1.21.4` 和 `26.2` 分支维护，`master` 与 `1.21.1` 保持完全一致。
+三个 Minecraft 版本由 `1.21.1`、`1.21.4` 和 `26.2` 分支维护，其中 `1.21.1` 是默认分支和公共文档源。
 
 ## 一句话简介
 
