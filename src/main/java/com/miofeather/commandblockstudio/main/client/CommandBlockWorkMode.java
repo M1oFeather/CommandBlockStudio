@@ -24,10 +24,8 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
-import net.neoforged.neoforge.client.event.InputEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import org.joml.Matrix4f;
-import org.lwjgl.glfw.GLFW;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -46,7 +44,6 @@ public final class CommandBlockWorkMode {
             .withZone(ZoneId.systemDefault());
 
     private static boolean enabled;
-    private static boolean shortcutLatched;
 
     private BlockPos target;
     private Direction targetFace = Direction.NORTH;
@@ -54,24 +51,13 @@ public final class CommandBlockWorkMode {
     private boolean unavailable;
     private long nextRefreshAt;
 
-    public static boolean handleDebugShortcut() {
-        if (!shortcutLatched) {
-            shortcutLatched = true;
-            enabled = !enabled;
-            Minecraft client = Minecraft.getInstance();
-            if (client.player != null) {
-                client.player.displayClientMessage(Component.translatable(
-                        enabled ? "cbs.workMode.enabled" : "cbs.workMode.disabled"
-                ).withStyle(enabled ? ChatFormatting.AQUA : ChatFormatting.GRAY), true);
-            }
-        }
-        return true;
-    }
-
-    @SubscribeEvent
-    public void onKeyInput(InputEvent.Key event) {
-        if (event.getKey() == GLFW.GLFW_KEY_F4 && event.getAction() == GLFW.GLFW_RELEASE) {
-            shortcutLatched = false;
+    public static void toggle() {
+        enabled = !enabled;
+        Minecraft client = Minecraft.getInstance();
+        if (client.player != null) {
+            client.player.displayClientMessage(Component.translatable(
+                    enabled ? "cbs.workMode.enabled" : "cbs.workMode.disabled"
+            ).withStyle(enabled ? ChatFormatting.AQUA : ChatFormatting.GRAY), true);
         }
     }
 

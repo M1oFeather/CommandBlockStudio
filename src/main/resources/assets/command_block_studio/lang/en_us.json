@@ -1,6 +1,7 @@
 {
   "key.category.cbs.keybinds": "Command Block Studio",
   "key.cbs.areaselectioninput": "Start/Stop Area Selection",
+  "key.cbs.workMode": "Toggle Work Mode",
   "cbs.trackOutput.true": "Track output",
   "cbs.trackOutput.false": "Ignore output",
   "cbs.trackOutput.setDefault": "Use as default",
