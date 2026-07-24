@@ -60,8 +60,6 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
     private static final Pattern NUMBER_TOKEN = Pattern.compile(
             "(?<![A-Za-z0-9_.])[-+]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?"
     );
-    private int visibleChars = 20;
-
     private StudioScaledScreen screen;
     private ScrollbarWidget scrollX, scrollY;
     private List<String> lines;
@@ -70,7 +68,6 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
     private int visibleLines = 11;
     private int scrolledLines = 0;
     private int horizontalOffset = 0;
-    private int maxLineWidth = 30;
     private Pair<Integer, Integer> cursorPosPreference;
     private boolean LShiftPressed, RShiftPressed = false;
     private boolean hasCommandSuggestor = false;
@@ -332,6 +329,14 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         return getY() + getHeight() - SCROLLBAR_SIZE - STATUS_BAR_HEIGHT;
     }
 
+    int getEditorOverlayTop() {
+        return getY() + 4;
+    }
+
+    int getEditorOverlayBottom() {
+        return Math.max(getEditorOverlayTop() + 1, getTextViewportBottom() - 3);
+    }
+
     private void renderInlineSuggestion(GuiGraphics graphics) {
         String completion = accessor.getSuggestion();
         boolean syntaxHint = false;
@@ -552,20 +557,23 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
                 Math.max(caretAnchor.belowLineY(), preferredY),
                 caretAnchor.lineY()
         );
-        int logicalWidth = screen == null ? graphics.guiWidth() : screen.getStudioViewportWidth();
-        int wrapWidth = Math.max(72, Math.min(220, logicalWidth - 16));
+        int overlayLeft = getX() + 4;
+        int overlayRight = getX() + getWidth() - 4;
+        int wrapWidth = Math.max(72, Math.min(220, overlayRight - overlayLeft - 8));
         List<FormattedCharSequence> lines = new ArrayList<>();
         for (Component component : components) {
             lines.addAll(accessor.getFont().split(component, wrapWidth));
         }
 
         ClientTooltipPositioner positioner = (screenWidth, screenHeight, ignoredMouseX, ignoredMouseY, tooltipWidth, tooltipHeight) -> {
-            int x = Mth.clamp(anchor.x(), 4, Math.max(4, logicalWidth - tooltipWidth - 4));
-            int logicalHeight = screen == null ? screenHeight : screen.getStudioViewportHeight();
-            int y = anchor.belowLineY();
-            if (y + tooltipHeight + 3 > logicalHeight) {
-                y = Math.max(4, anchor.lineY() - tooltipHeight - 6);
-            }
+            int x = Mth.clamp(anchor.x(), overlayLeft, Math.max(overlayLeft, overlayRight - tooltipWidth));
+            int y = EditorOverlayPlacement.placeVertical(
+                    anchor.belowLineY(),
+                    anchor.lineY() - 6,
+                    tooltipHeight,
+                    getEditorOverlayTop(),
+                    getEditorOverlayBottom()
+            );
             return new Vector2i(x, y);
         };
         graphics.renderTooltip(accessor.getFont(), lines, positioner, mouseX, mouseY);
@@ -671,18 +679,28 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         }
 
         Font font = accessor.getFont();
-        int previousWidth = 0;
-        for (int offset = visibleStart; offset < line.length(); offset++) {
-            int nextWidth = font.width(line.substring(visibleStart, offset + 1));
-            if (pixelX < previousWidth + (nextWidth - previousWidth) / 2.0D) {
-                return offset;
-            }
-            if (pixelX < nextWidth) {
-                return offset + 1;
-            }
-            previousWidth = nextWidth;
+        int fullWidth = font.width(line.substring(visibleStart));
+        if (pixelX >= fullWidth) {
+            return line.length();
         }
-        return line.length();
+
+        int low = visibleStart + 1;
+        int high = line.length();
+        while (low < high) {
+            int middle = (low + high) >>> 1;
+            int width = font.width(line.substring(visibleStart, middle));
+            if (width < pixelX) {
+                low = middle + 1;
+            } else {
+                high = middle;
+            }
+        }
+
+        int nextOffset = low;
+        int previousOffset = nextOffset - 1;
+        int previousWidth = font.width(line.substring(visibleStart, previousOffset));
+        int nextWidth = font.width(line.substring(visibleStart, nextOffset));
+        return pixelX < (previousWidth + nextWidth) / 2.0D ? previousOffset : nextOffset;
     }
 
     private OptionalInt getHoveredTextIndex(double mouseX, double mouseY) {
@@ -731,12 +749,14 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
 
     public Pair<Integer, Integer> getCharacterPos(int index){
         Pair<Integer,Integer> output = indexToLineAndOffset(index);
-        int x,y;
-        try {
-            x = getTextLeft() + accessor.getFont().width(lines.get(output.getA()).substring(horizontalOffset, output.getB()));
-        } catch(Exception e){
-            x = 0;
+        if (lines.isEmpty()) {
+            return new Pair<>(getTextLeft(), getY() + TEXT_TOP_PADDING);
         }
+        String line = lines.get(clamp(output.getA(), 0, lines.size() - 1));
+        int visibleStart = clamp(horizontalOffset, 0, line.length());
+        int cursorOffset = clamp(output.getB(), visibleStart, line.length());
+        int x = getTextLeft() + accessor.getFont().width(line.substring(visibleStart, cursorOffset));
+        int y;
         y = this.getY() + 5 + 10 * (output.getA()-scrolledLines);
         return new Pair<>(x,y);
     }
@@ -1387,16 +1407,10 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
             return;
         }
 
-        int viewportWidth = getTextViewportWidth();
+        int viewportWidth = Math.max(1, getTextViewportWidth());
         int maxPixelWidth = 0;
         for (String line : lines) {
             maxPixelWidth = Math.max(maxPixelWidth, accessor.getFont().width(line));
-        }
-
-        visibleChars = Math.max(1, viewportWidth / Math.max(1, accessor.getFont().width("0")));
-        if (maxPixelWidth > viewportWidth && maxLineWidth > 0) {
-            int estimatedVisibleChars = Math.max(1, (int) Math.floor(maxLineWidth * (viewportWidth / (double) maxPixelWidth)));
-            visibleChars = Math.min(visibleChars, estimatedVisibleChars);
         }
 
         scrollY.setScale(lines.size() / (double) Math.max(1, visibleLines));
@@ -1415,7 +1429,31 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
     }
 
     private int getMaxHorizontalScroll() {
-        return Math.max(0, maxLineWidth - visibleChars);
+        int viewportWidth = Math.max(1, getTextViewportWidth() - 3);
+        int maximum = 0;
+        for (String line : lines) {
+            maximum = Math.max(maximum, findFirstVisibleCharacter(line, line.length(), viewportWidth));
+        }
+        return maximum;
+    }
+
+    private int findFirstVisibleCharacter(String line, int cursorOffset, int viewportWidth) {
+        int cursor = clamp(cursorOffset, 0, line.length());
+        if (accessor.getFont().width(line.substring(0, cursor)) <= viewportWidth) {
+            return 0;
+        }
+
+        int low = 0;
+        int high = cursor;
+        while (low < high) {
+            int middle = (low + high) >>> 1;
+            if (accessor.getFont().width(line.substring(middle, cursor)) <= viewportWidth) {
+                high = middle;
+            } else {
+                low = middle + 1;
+            }
+        }
+        return low;
     }
 
     private void setUnformattedText(String text){
@@ -1429,10 +1467,6 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         textOffsets = new LinkedList<>();
         textOffsets.add(0);
 
-        maxLineWidth = 0;
-        for(String line : lines){
-            maxLineWidth = Math.max(line.length(), maxLineWidth);
-        }
     }
 
     private interface SpacePeeker {
@@ -1485,7 +1519,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         char current;
         String currentLine = "";
         boolean newLine = false;
-        int lastWordStart = 0;
+        int lastWordStart = -1;
 
         SpacePeeker peeker = new SpacePeeker() {
             @Override
@@ -1493,15 +1527,11 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
                 // Check for following spaces, makes for consistent indentation
                 StringBuilder outputLine = new StringBuilder();
                 int tempCurrentIndex = startIndex + 1;
-                if (tempCurrentIndex < textArr.length) {
-                    char tempCurrent = textArr[tempCurrentIndex];
-                    while (tempCurrentIndex < textArr.length - 1 && tempCurrent == ' ') {
-                        ++tempCurrentIndex;
-                        outputLine.append(tempCurrent);
-                        tempCurrent = textArr[tempCurrentIndex];
-                    }
-                    startIndex = tempCurrentIndex - 1;
+                while (tempCurrentIndex < textArr.length && textArr[tempCurrentIndex] == ' ') {
+                    outputLine.append(textArr[tempCurrentIndex]);
+                    tempCurrentIndex++;
                 }
+                startIndex = tempCurrentIndex - 1;
 
                 return new Pair<>(startIndex, outputLine.toString());
             }
@@ -1516,7 +1546,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
             current = textArr[currentIndex];
 
             if (textRenderer.width(currentLine) > CommandBlockStudio.WRAPAROUND_WIDTH){
-                if(lastWordStart == 0){
+                if(lastWordStart < 0){
                     lastWordStart = currentLine.length();
                 }
                 String truncatedLine = currentLine.substring(0, Math.min(lastWordStart, currentLine.length()));
@@ -1526,7 +1556,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
                 } else {
                     currentLine = "";
                 }
-                lastWordStart = 0;
+                lastWordStart = -1;
             }
 
             int colorStartIndex = currentIndex; // Necessary to make color start in right spot when peeking ahead
@@ -1541,7 +1571,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
                     }
                     if (CommandBlockStudio.NEWLINE_PRE_OPEN_BRACKET){
                         submitLine(currentLine, parenthesesDepth);
-                        lastWordStart = 0;
+                        lastWordStart = -1;
                         currentLine = "";
                         newLine = true;
                     }
@@ -1553,7 +1583,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
                         currentLine += peekResult.getB();
 
                         submitLine(currentLine, parenthesesDepth);
-                        lastWordStart = 0;
+                        lastWordStart = -1;
                         currentLine = "";
                         newLine = true;
                     }
@@ -1581,7 +1611,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
                     boolean indentationChanged = false;
                     if (CommandBlockStudio.NEWLINE_PRE_CLOSE_BRACKET){
                         submitLine(currentLine, parenthesesDepth);
-                        lastWordStart = 0;
+                        lastWordStart = -1;
                         currentLine = "";
                         newLine = true;
                         parenthesesDepth = Math.max(0,parenthesesDepth-1);
@@ -1595,7 +1625,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
                         currentLine += peekResult.getB();
 
                         submitLine(currentLine, parenthesesDepth);
-                        lastWordStart = 0;
+                        lastWordStart = -1;
                         currentLine = "";
                         newLine = true;
                         if (!indentationChanged)
@@ -1619,16 +1649,16 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
 
                     if (CommandBlockStudio.NEWLINE_POST_COMMA){
                         submitLine(currentLine, parenthesesDepth);
-                        lastWordStart = 0;
+                        lastWordStart = -1;
                         currentLine = "";
                         //newLine = true;
                     }
                     break;
                 case ' ':
+                    lastWordStart = currentLine.length();
                     currentLine += current;
                     newLine = false;
                     escapeChar = false;
-                    lastWordStart = currentLine.length();
                     break;
                 case '\\':
                     escapeChar = !escapeChar;
@@ -1666,10 +1696,6 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
             textColors.add(new Pair<>(suggestor.getColor(p.getA()),p.getB()));
         }
 
-        maxLineWidth = 0;
-        for(String line : lines){
-            maxLineWidth = Math.max(line.length(), maxLineWidth);
-        }
     }
 
     private int getHighlightColorIndex(int i){
@@ -1846,15 +1872,15 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         if(lines.isEmpty()) return;
         Pair<Integer, Integer> lineAndOffset = indexToLineAndOffset(accessor.invokeGetCursorPos(0));
         String line = lines.get(lineAndOffset.getA());
-        int xPreference = getX() + textRenderer.width(line.substring(0,Math.min(line.length()-1,lineAndOffset.getB())));
+        int visibleStart = clamp(horizontalOffset, 0, line.length());
+        int cursorOffset = clamp(lineAndOffset.getB(), visibleStart, line.length());
+        int xPreference = getTextLeft() + textRenderer.width(line.substring(visibleStart, cursorOffset));
         cursorPosPreference = new Pair<>(xPreference, this.getY() + 10 * (lineAndOffset.getA() - scrolledLines));
 
         updateScrollPositions();
     }
 
     private void updateScrollPositions(){
-        Font textRenderer = accessor.getFont();
-
         Pair<Integer, Integer> lineAndOffset = indexToLineAndOffset(accessor.invokeGetCursorPos(0));
         if(lines.size() < 1){
             horizontalOffset = 0;
@@ -1864,28 +1890,19 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
             return;
         }
         String line = lines.get(lineAndOffset.getA());
-        int maxIndex = line.length()-1;
-        boolean lineEndLeftOfWindow = horizontalOffset > lineAndOffset.getB();
-        int xPos;
-        if(lineEndLeftOfWindow){
-            int extension = 1 + horizontalOffset - lineAndOffset.getB();
-            line += "_".repeat(extension);
-            maxIndex += extension;
-            xPos = textRenderer.width(line.substring(clamp(lineAndOffset.getB(), 0, maxIndex), clamp(horizontalOffset, 0, maxIndex))) * -1;
-        } else {
-            xPos = textRenderer.width(line.substring(clamp(horizontalOffset, 0, maxIndex), clamp(lineAndOffset.getB(), 0, maxIndex)));
-        }
-
-        int textWidth = getTextViewportWidth();
+        int cursorOffset = clamp(lineAndOffset.getB(), 0, line.length());
+        int textWidth = Math.max(1, getTextViewportWidth() - 3);
         int maxHorizontalScroll = getMaxHorizontalScroll();
-        if(xPos <= 5){
-            //Not exact, but I won't go 1 character at a time and check if it's far enough
-            horizontalOffset = clamp(horizontalOffset + (xPos-10)/5, 0, maxHorizontalScroll);
-            scrollX.updatePos(maxHorizontalScroll == 0 ? 0.0d : (double) horizontalOffset / maxHorizontalScroll);
-        } else if (xPos >= textWidth){
-            horizontalOffset = clamp(horizontalOffset + (xPos-textWidth)/5, 0, maxHorizontalScroll);
-            scrollX.updatePos(maxHorizontalScroll == 0 ? 0.0d : (double) horizontalOffset / maxHorizontalScroll);
+        if (cursorOffset < horizontalOffset) {
+            horizontalOffset = cursorOffset;
+        } else {
+            int visibleStart = clamp(horizontalOffset, 0, line.length());
+            if (accessor.getFont().width(line.substring(visibleStart, cursorOffset)) > textWidth) {
+                horizontalOffset = findFirstVisibleCharacter(line, cursorOffset, textWidth);
+            }
         }
+        horizontalOffset = clamp(horizontalOffset, 0, maxHorizontalScroll);
+        scrollX.updatePos(maxHorizontalScroll == 0 ? 0.0d : (double) horizontalOffset / maxHorizontalScroll);
 
 
         int lineIndex = lineAndOffset.getA();

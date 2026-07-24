@@ -792,6 +792,29 @@ public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
         sendSettingsToServer(this.consoleCommandTextField.getValue());
     }
 
+    @Override
+    protected boolean supportsRunTest() {
+        return true;
+    }
+
+    @Override
+    protected boolean canRunTest() {
+        return minecraft != null
+                && minecraft.getConnection() != null
+                && minecraft.getConnection().hasChannel(CommandBlockAnnotationNetwork.RunCommandBlock.TYPE);
+    }
+
+    @Override
+    protected void runTest() {
+        if (!canRunTest()) {
+            return;
+        }
+        if (wasModified()) {
+            commitSilently();
+        }
+        minecraft.getConnection().send(new CommandBlockAnnotationNetwork.RunCommandBlock(blockEntity.getBlockPos()));
+    }
+
     private void applyContextSettingImmediately() {
         if (!updated || modeButton == null || conditionalModeButton == null || redstoneTriggerButton == null) {
             return;

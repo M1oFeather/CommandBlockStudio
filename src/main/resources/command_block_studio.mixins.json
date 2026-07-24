@@ -11,6 +11,7 @@
     "ClientCommonPacketListenerImplAccessor",
     "LocalPlayerAccessor",
     "ClientPacketListenerMixin",
+    "ChatScreenMixin",
     "CommandBlockMinecartMixin",
     "CommandBlockMixin",
     "CommandSuggestorAccessor",
@@ -20,7 +21,8 @@
     "ServerPlayerAccessor",
     "SuggestionWindowAccessor",
     "EditBoxAccessor",
-    "FontAccessor"
+    "FontAccessor",
+    "KeyboardHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/Minecraft-1.21.1-brightgreen?style=flat-square" alt="Minecraft 1.21.1">
   <img src="https://img.shields.io/badge/NeoForge-21.1.217-blue?style=flat-square" alt="NeoForge 21.1.217">
   <img src="https://img.shields.io/badge/Java-21-orange?style=flat-square" alt="Java 21">
-  <img src="https://img.shields.io/badge/Version-1.0.0-purple?style=flat-square" alt="Version 1.0.0">
+  <img src="https://img.shields.io/badge/Version-1.2.0-purple?style=flat-square" alt="Version 1.2.0">
   <img src="https://img.shields.io/badge/Install-Client%20%2F%20Server%20Independent-lightgrey?style=flat-square" alt="Client and server installations are independent">
   <img src="https://img.shields.io/badge/License-MIT-red?style=flat-square" alt="License MIT">
 </p>
@@ -63,6 +63,7 @@
 
 ### 命令智能提示
 
+- **聊天命令助手**：聊天框内容以 `/` 开头时，右侧自动展开约四分之一屏幕宽的命令助手；它复用 Studio 的参数文档、增强补全、粒子/方块/物品预览和玩家头像信息，普通聊天时完全隐藏。
 - **悬停解释**：鼠标停在命令或参数上时，显示当前命令节点的说明与示例。
 - **当前参数提示**：光标所在参数会在编辑器底部显示简短解释，接近代码编辑器的 signature help。
 - **原生自动补全**：补全候选来自当前连接的 Brigadier 命令树，并在光标后显示灰色幽灵文本；悬停候选项可查看对应命令或参数说明。
@@ -92,6 +93,10 @@
 - **即时方块控制**：命令方块类型、条件模式和红石模式点击后立即同步；命令文本按自动保存或手动保存策略提交。
 - **共享方块注释**：服务端同时安装模组时，注释入口紧跟在左侧活动栏的工具入口后；有权限的编辑者可说明命令方块用途，内容随方块持久化并由服务端同步。
 - **版本化编辑记录**：服务端为每个命令方块保留最近 10 个完整版本，包括命令、方块模式、条件、红石需求和输出追踪；注释页可选择旧版本回滚，当前版本仍会作为历史保留。
+- **背包命令摘要**：带方块实体数据的命令方块物品会在悬停提示中显示命令开头；若物品同时携带 Studio 编辑历史，还会显示最后编辑时间和编辑者。
+- **工作模式投影**：按 `F3+F4` 切换工作模式，准星指向命令方块时会在该方块前方悬浮显示命令、模式、坐标与最后编辑信息；投影始终朝向玩家。该组合键在工作模式启用后由 Studio 接管。
+- **运行测试**：编辑器底部的播放按钮会先保存当前修改，再让服务端触发一次命令方块，无需临时放置红石块。
+- **逐功能兼容**：客户端与服务端版本号允许不同；注释、预览、运行测试等功能分别检查载荷通道，不支持的入口会隐藏或禁用。
 
 ### 区域选择辅助
 
@@ -238,7 +243,7 @@ IDE 的 `Client` 配置会读取 ModDevGradle 生成的 `build/moddev/clientRunV
 构建产物输出到：
 
 ```text
-build/libs/command_block_studio-1.0.0.jar
+build/libs/command_block_studio-1.2.0-1.21.1-NeoForge.jar
 ```
 
 ### 文档站

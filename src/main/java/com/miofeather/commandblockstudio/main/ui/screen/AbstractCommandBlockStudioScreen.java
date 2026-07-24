@@ -87,6 +87,7 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
     protected EditBox previousOutputTextField;
     protected Button doneButton;
     protected Button cancelButton;
+    protected StudioIconButton runTestButton;
     protected Button configButton;
     protected Button editorRailButton;
     protected Button problemsRailButton;
@@ -394,6 +395,44 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
         doneButton = addRenderableWidget(Button.builder(Component.translatable("cbs.action.save"), button -> commitAndClose())
                 .bounds(x - 68, actionY, 68, BUTTON_HEIGHT)
                 .build());
+        x -= 72;
+        if (supportsRunTest()) {
+            runTestButton = addRenderableWidget(new StudioIconButton(
+                    x - 28,
+                    actionY,
+                    28,
+                    BUTTON_HEIGHT,
+                    Component.translatable("cbs.runTest"),
+                    ICON_RUN,
+                    14,
+                    true,
+                    button -> runTest()
+            ));
+            runTestButton.setProminentBackground(true);
+            updateRunTestButton(false);
+        }
+    }
+
+    protected boolean supportsRunTest() {
+        return false;
+    }
+
+    protected boolean canRunTest() {
+        return false;
+    }
+
+    protected void runTest() {
+    }
+
+    private void updateRunTestButton(boolean editorActive) {
+        if (runTestButton == null) {
+            return;
+        }
+        boolean available = canRunTest();
+        runTestButton.active = editorActive && available;
+        runTestButton.setTooltip(Tooltip.create(Component.translatable(
+                available ? "cbs.runTest.tooltip" : "cbs.runTest.serverRequired"
+        )));
     }
 
     protected void setBottomPanelMode(BottomPanelMode mode) {
@@ -836,6 +875,7 @@ public abstract class AbstractCommandBlockStudioScreen extends StudioScaledScree
 
     protected void setButtonsActive(boolean active) {
         doneButton.active = active;
+        updateRunTestButton(active);
         toggleTrackingOutputButton.active = active;
         consoleCommandTextField.setEditable(active);
         configButton.active = active;

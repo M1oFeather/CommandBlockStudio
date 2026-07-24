@@ -180,6 +180,7 @@ tasks.named('test', Test).configure {
 }
 
 tasks.named('jar', Jar).configure {
+    archiveFileName = "${mod_id}-${mod_version}-${minecraft_version}-NeoForge.jar"
     from(rootProject.file('LICENSE')) {
         into 'META-INF'
     }

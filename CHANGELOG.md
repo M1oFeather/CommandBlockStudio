@@ -1,5 +1,29 @@
 # Changelog
 
+## 1.1.0 - 2026-07-23
+
+### Command block inspection
+
+- Added command previews to command block item tooltips when the stack carries block-entity data.
+- Added last-edit time and editor metadata when the copied item carries Command Block Studio history.
+- Added an `F3+F4` work mode that renders a camera-facing holographic panel in front of the targeted command block, including command text, mode, coordinates, and last editor.
+- Fixed long-command wrapping and horizontal scrolling so spaces retain their width and mouse/caret positions remain aligned with proportional font metrics.
+- Kept command usage, completion candidates, and completion documentation inside the editor text viewport so they flip above the active line before reaching the parameter status bar.
+
+### Chat command assistant
+
+- Added a client-side command assistant that opens on the right quarter of the chat screen when the input begins with `/`.
+- Reused Studio documentation and structured completion for chat commands, including `Ctrl+Space`.
+- Added block, item, particle, and player visuals to chat completion, with animated particle previews and online-player latency/game-mode details.
+- Kept ordinary chat unchanged and sourced available commands from the server-synchronized Brigadier tree.
+
+### Run and compatibility
+
+- Added an editor run-test button that saves the current draft and triggers the command block once without placing redstone.
+- Added independent optional payloads for command preview and run-test execution with the same stable protocol generation as 1.0.0.
+- Server features are now negotiated per payload: different mod versions can connect, and unsupported controls are disabled instead of failing the connection.
+- Kept client-only and server-only installations supported.
+
 ## 1.0.0 - 2026-07-19
 
 ### NeoForge port

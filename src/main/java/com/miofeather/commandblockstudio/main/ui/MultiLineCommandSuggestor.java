@@ -18,11 +18,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.CommandSuggestions;
-import net.minecraft.client.gui.components.PlayerFaceRenderer;
-import net.minecraft.client.particle.SpriteSet;
-import net.minecraft.client.multiplayer.PlayerInfo;
-import net.minecraft.client.resources.DefaultPlayerSkin;
-import net.minecraft.client.resources.PlayerSkin;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.renderer.Rect2i;
@@ -34,19 +29,15 @@ import net.minecraft.network.chat.Style;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.ComponentUtils;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.resources.ResourceLocation;
-import com.miofeather.commandblockstudio.mixin.ParticleEngineAccessor;
 import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
-import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
@@ -60,7 +51,7 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
     private Pair<Integer, Integer> startPos;
     private int x, y;
     private Object preparedSuggestionWindow;
-    private Map<Suggestion, SuggestionVisual> suggestionVisuals = Map.of();
+    private Map<Suggestion, CommandSuggestionVisual> suggestionVisuals = Map.of();
     private boolean suggestionIconsVisible;
 
     public MultiLineCommandSuggestor(Minecraft client, Screen owner, EditBox textField, Font textRenderer, boolean slashOptional, boolean suggestingWhenEmpty, int inWindowIndexOffset, int maxSuggestionSize, boolean chatScreenSized, int color) {
@@ -93,11 +84,28 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
                     || insightService.getDiagnostic(accessor.getInput().getValue()).isPresent()) {
                 return;
             }
+            MultiLineTextFieldWidget input = (MultiLineTextFieldWidget) accessor.getInput();
+            int usageHeight = accessor.getCommandUsage().isEmpty()
+                    ? 0
+                    : (accessor.getCommandUsage().size() - 1) * 10 + 12;
+            int usageY = EditorOverlayPlacement.placeVertical(
+                    this.y,
+                    this.y - accessor.getFont().lineHeight - 4,
+                    usageHeight,
+                    input.getEditorOverlayTop(),
+                    input.getEditorOverlayBottom()
+            );
+            int minimumX = input.getX() + 4;
+            int maximumX = Math.max(
+                    minimumX,
+                    input.getX() + input.getWidth() - accessor.getCommandUsageWidth() - 4
+            );
+            int usageX = Mth.clamp(this.x, minimumX, maximumX);
             int i = 0;
             for (FormattedCharSequence orderedText : accessor.getCommandUsage()) {
                 int j = i * 10;
-                graphics.fill(this.x - 1, j + this.y, this.x + accessor.getCommandUsageWidth() + 1, j + 12 + this.y, accessor.getFillColor());
-                graphics.drawString(accessor.getFont(), orderedText, this.x, (this.y + j + 2), -1);
+                graphics.fill(usageX - 1, j + usageY, usageX + accessor.getCommandUsageWidth() + 1, j + 12 + usageY, accessor.getFillColor());
+                graphics.drawString(accessor.getFont(), orderedText, usageX, usageY + j + 2, -1);
                 ++i;
             }
         }
@@ -201,11 +209,13 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
             int minX = input.getX() + 4 + iconGutter;
             int maxX = Math.max(minX, input.getX() + input.getWidth() - popupWidth - 4);
             int popupX = Math.max(minX, Math.min(this.x, maxX));
-            int minY = input.getY() + 4;
-            int maxY = Math.max(minY, input.getY() + input.getHeight() - popupHeight - 4);
-            int popupY = this.y <= maxY
-                    ? Math.max(minY, this.y)
-                    : Math.max(minY, this.y - popupHeight - accessor.getFont().lineHeight - 4);
+            int popupY = EditorOverlayPlacement.placeVertical(
+                    this.y,
+                    this.y - accessor.getFont().lineHeight - 4,
+                    popupHeight,
+                    input.getEditorOverlayTop(),
+                    input.getEditorOverlayBottom()
+            );
             Rect2i area = new Rect2i(popupX, popupY, popupWidth, popupHeight);
             window.setRect(area);
         }
@@ -238,63 +248,26 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
         int cursor = accessor.getInput().getCursorPosition();
         List<Suggestion> suggestions = new ArrayList<>(window.getSuggestionList());
         if (insightService.expectsPlayerSuggestions(command, cursor)) {
-            suggestions.sort(Comparator.comparingInt(suggestion -> playerSuggestionRank(suggestion.getText())));
+            suggestions.sort(Comparator.comparingInt(
+                    suggestion -> CommandSuggestionVisual.playerRank(Minecraft.getInstance(), suggestion.getText())
+            ));
             window.setSuggestionList(suggestions);
             window.invokeSelect(0);
         }
 
-        Map<Suggestion, SuggestionVisual> visuals = new HashMap<>();
+        Map<Suggestion, CommandSuggestionVisual> visuals = new HashMap<>();
         for (Suggestion suggestion : suggestions) {
-            SuggestionVisual visual = createSuggestionVisual(command, cursor, suggestion.getText());
-            if (visual != null) {
-                visuals.put(suggestion, visual);
-            }
+            CommandSuggestionVisual.resolve(
+                    Minecraft.getInstance(),
+                    insightService,
+                    command,
+                    cursor,
+                    suggestion.getText()
+            ).ifPresent(visual -> visuals.put(suggestion, visual));
         }
         suggestionVisuals = Map.copyOf(visuals);
         suggestionIconsVisible = !suggestionVisuals.isEmpty();
         return true;
-    }
-
-    private int playerSuggestionRank(String suggestion) {
-        if (accessor.getInput() == null || Minecraft.getInstance().getConnection() == null) {
-            return 2;
-        }
-        return Minecraft.getInstance().getConnection().getPlayerInfo(suggestion) != null
-                ? 0
-                : suggestion.startsWith("@") ? 1 : 2;
-    }
-
-    private SuggestionVisual createSuggestionVisual(String command, int cursor, String suggestion) {
-        ResourceLocation id = ResourceLocation.tryParse(suggestion);
-        if (id != null && insightService.isBlockSuggestion(command, cursor, suggestion)) {
-            ItemStack stack = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.BLOCK.get(id).asItem());
-            if (!stack.isEmpty()) {
-                return new SuggestionVisual(stack, null, null, null);
-            }
-        }
-        if (id != null && insightService.isItemSuggestion(command, cursor, suggestion)) {
-            ItemStack stack = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(id));
-            if (!stack.isEmpty()) {
-                return new SuggestionVisual(stack, null, null, null);
-            }
-        }
-        if (id != null && insightService.isParticleSuggestion(command, cursor, suggestion)) {
-            SpriteSet sprites = ((ParticleEngineAccessor) Minecraft.getInstance().particleEngine)
-                    .getSpriteSets()
-                    .get(id);
-            return new SuggestionVisual(ItemStack.EMPTY, null, id, sprites);
-        }
-        if (insightService.isPlayerSuggestion(command, cursor, suggestion)) {
-            PlayerInfo online = Minecraft.getInstance().getConnection() == null
-                    ? null
-                    : Minecraft.getInstance().getConnection().getPlayerInfo(suggestion);
-            PlayerSkin skin = online != null
-                    ? online.getSkin()
-                    : DefaultPlayerSkin.get(UUID.nameUUIDFromBytes(
-                            ("OfflinePlayer:" + suggestion).getBytes(StandardCharsets.UTF_8)));
-            return new SuggestionVisual(ItemStack.EMPTY, skin, null, null);
-        }
-        return null;
     }
 
     private void renderSuggestionBackground(GuiGraphics graphics, SuggestionWindowAccessor window) {
@@ -316,28 +289,13 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
         int visibleRows = Math.min(window.getSuggestionList().size() - window.getOffset(), rect.getHeight() / 12);
         for (int row = 0; row < visibleRows; row++) {
             Suggestion suggestion = window.getSuggestionList().get(window.getOffset() + row);
-            SuggestionVisual visual = suggestionVisuals.get(suggestion);
+            CommandSuggestionVisual visual = suggestionVisuals.get(suggestion);
             if (visual == null) {
                 continue;
             }
             int iconX = rect.getX() - 12;
             int iconY = rect.getY() + row * 12 + 1;
-            if (visual.skin() != null) {
-                PlayerFaceRenderer.draw(graphics, visual.skin(), iconX, iconY, 10);
-            } else if (visual.particleId() != null) {
-                TextureAtlasSprite sprite = visual.particleSprite();
-                if (sprite != null) {
-                    graphics.blit(iconX, iconY, 0, 10, 10, sprite);
-                } else {
-                    renderFallbackParticle(graphics, visual.particleId(), iconX, iconY, 10);
-                }
-            } else if (!visual.item().isEmpty()) {
-                graphics.pose().pushPose();
-                graphics.pose().translate(iconX, iconY, 0.0F);
-                graphics.pose().scale(0.625F, 0.625F, 1.0F);
-                graphics.renderItem(visual.item(), 0, 0);
-                graphics.pose().popPose();
-            }
+            visual.renderIcon(graphics, iconX, iconY, 10);
         }
     }
 
@@ -346,7 +304,7 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
         if (window == null || window.getCurrent() < 0 || window.getCurrent() >= window.getSuggestionList().size()) {
             return Optional.empty();
         }
-        SuggestionVisual visual = suggestionVisuals.get(window.getSuggestionList().get(window.getCurrent()));
+        CommandSuggestionVisual visual = suggestionVisuals.get(window.getSuggestionList().get(window.getCurrent()));
         if (visual == null || visual.particleId() == null) {
             return Optional.empty();
         }
@@ -354,31 +312,10 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
     }
 
     public static void renderFallbackParticle(GuiGraphics graphics, ResourceLocation id, int x, int y, int size) {
-        int hash = id.hashCode();
-        int color = 0xFF000000 | (hash & 0x00BFBFBF) | 0x00303030;
-        int pulse = Math.max(1, size / 5);
-        int center = size / 2;
-        graphics.fill(x + center - pulse, y + center - pulse, x + center + pulse + 1, y + center + pulse + 1, color);
-        graphics.fill(x + 1, y + center, x + 1 + pulse, y + center + 1, color);
-        graphics.fill(x + size - pulse - 1, y + center, x + size - 1, y + center + 1, color);
-        graphics.fill(x + center, y + 1, x + center + 1, y + 1 + pulse, color);
+        CommandSuggestionVisual.renderFallbackParticle(graphics, id, x, y, size);
     }
 
     public record ParticlePreview(ResourceLocation id, TextureAtlasSprite sprite) {
-    }
-
-    private record SuggestionVisual(ItemStack item, PlayerSkin skin, ResourceLocation particleId, SpriteSet particleSprites) {
-        private TextureAtlasSprite particleSprite() {
-            if (particleSprites == null) {
-                return null;
-            }
-            int frame = (int) ((net.minecraft.Util.getMillis() / 100L) % 20L);
-            try {
-                return particleSprites.get(frame, 20);
-            } catch (RuntimeException ignored) {
-                return null;
-            }
-        }
     }
 
     public Style getColor(int colorIndex){
@@ -480,10 +417,17 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
         if (showSyntaxSuggestions(command, cursor)) {
             return;
         }
-        if (accessor.getPendingSuggestions() == null) {
+        CompletableFuture<Suggestions> pendingSuggestions = accessor.getPendingSuggestions();
+        if (pendingSuggestions == null) {
             return;
         }
-        accessor.getPendingSuggestions().thenRun(() -> Minecraft.getInstance().execute(() -> {
+        if (pendingSuggestions.isDone()
+                && !pendingSuggestions.isCompletedExceptionally()
+                && !pendingSuggestions.isCancelled()) {
+            showSuggestions(true);
+            return;
+        }
+        pendingSuggestions.thenRun(() -> Minecraft.getInstance().execute(() -> {
             if (accessor.getInput().getValue().equals(command)
                     && accessor.getInput().getCursorPosition() == cursor) {
                 showSuggestions(true);

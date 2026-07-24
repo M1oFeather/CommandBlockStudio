@@ -2,6 +2,8 @@ package com.miofeather.commandblockstudio.main;
 
 import com.miofeather.commandblockstudio.main.config.ConfigScreen;
 import com.miofeather.commandblockstudio.main.config.CommandBlockStudioConfig;
+import com.miofeather.commandblockstudio.main.client.CommandBlockItemTooltip;
+import com.miofeather.commandblockstudio.main.client.CommandBlockWorkMode;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.CommandBlock;
@@ -52,6 +54,7 @@ public class CommandBlockStudio {
     public static final ResourceLocation ICON_PIN_ACTIVE = iconTexture("icon_pin_active");
     public static final ResourceLocation ICON_ARROW_LEFT = iconTexture("icon_arrow_left");
     public static final ResourceLocation ICON_ARROW_RIGHT = iconTexture("icon_arrow_right");
+    public static final ResourceLocation ICON_RUN = iconTexture("icon_run");
 
     public static final ResourceLocation ID_BLOCK_IMPULSE = ResourceLocation.parse("command_block_studio:block_impulse");
     public static final ResourceLocation ID_BLOCK_IMPULSE_FOCUSED = ResourceLocation.parse("command_block_studio:block_impulse_focused");
@@ -219,6 +222,8 @@ public class CommandBlockStudio {
         modEventBus.addListener(this::onConfigLoading);
         modEventBus.addListener(this::onConfigReloading);
         NeoForge.EVENT_BUS.register(this);
+        NeoForge.EVENT_BUS.register(new CommandBlockItemTooltip());
+        NeoForge.EVENT_BUS.register(new CommandBlockWorkMode());
 
         migrateLegacyConfig();
         modContainer.registerConfig(ModConfig.Type.CLIENT, CommandBlockStudioConfig.SPEC, MODID + "-client.toml");

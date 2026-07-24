@@ -57,4 +57,7 @@ public interface CommandSuggestorAccessor{
 
     @Accessor
     int getCommandUsageWidth();
+
+    @Accessor
+    int getCommandUsagePosition();
 }
