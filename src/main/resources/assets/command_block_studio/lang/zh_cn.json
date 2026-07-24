@@ -1,6 +1,7 @@
 {
   "key.category.cbs.keybinds": "Command Block Studio",
   "key.cbs.areaselectioninput": "开始/结束区域选择",
+  "key.cbs.workMode": "切换工作模式",
   "cbs.trackOutput.true": "记录输出",
   "cbs.trackOutput.false": "忽略输出",
   "cbs.trackOutput.setDefault": "设为默认状态",

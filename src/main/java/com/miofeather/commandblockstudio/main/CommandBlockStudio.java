@@ -26,6 +26,8 @@ import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ClientChatReceivedEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
+import net.neoforged.neoforge.client.settings.KeyConflictContext;
+import net.neoforged.neoforge.client.settings.KeyModifier;
 import net.neoforged.neoforge.common.NeoForge;
 import org.lwjgl.glfw.GLFW;
 import org.slf4j.Logger;
@@ -216,6 +218,7 @@ public class CommandBlockStudio {
     }
 
     private static KeyMapping areaSelectionInput;
+    private static KeyMapping workModeInput;
 
     public CommandBlockStudio(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::registerKeyMappings);
@@ -299,7 +302,15 @@ public class CommandBlockStudio {
                 InputConstants.Type.KEYSYM,
                 GLFW.GLFW_KEY_SEMICOLON,
                 "key.category.cbs.keybinds");
+        workModeInput = new KeyMapping(
+                "key.cbs.workMode",
+                KeyConflictContext.IN_GAME,
+                KeyModifier.ALT,
+                InputConstants.Type.KEYSYM,
+                GLFW.GLFW_KEY_TAB,
+                "key.category.cbs.keybinds");
         event.register(areaSelectionInput);
+        event.register(workModeInput);
     }
 
     @SubscribeEvent
@@ -309,6 +320,11 @@ public class CommandBlockStudio {
             while (areaSelectionInput.consumeClick()) {
                 boolean startedSelection = AreaSelectionHandler.areaSelectionInput();
                 client.player.displayClientMessage(startedSelection ? Component.translatable("cbs.areaSelection.start") : Component.translatable("cbs.areaSelection.end"), true);
+            }
+        }
+        if (workModeInput != null && client.player != null) {
+            while (workModeInput.consumeClick()) {
+                CommandBlockWorkMode.toggle();
             }
         }
     }

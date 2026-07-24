@@ -21,8 +21,7 @@
     "ServerPlayerAccessor",
     "SuggestionWindowAccessor",
     "EditBoxAccessor",
-    "FontAccessor",
-    "KeyboardHandlerMixin"
+    "FontAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
