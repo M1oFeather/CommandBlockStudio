@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.CommandBlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.RenderGuiEvent;
 import net.neoforged.neoforge.client.event.InputEvent;
@@ -119,9 +120,36 @@ public final class CommandBlockWorkMode {
         int panelWidth = Math.max(116, lines.stream().mapToInt(line -> font.width(line.text())).max().orElse(100) + 16);
         int panelHeight = lines.size() * 10 + 12;
         GuiGraphicsExtractor graphics = event.getGuiGraphics();
-        int left = graphics.guiWidth() - panelWidth - 12;
-        int top = Math.max(12, (graphics.guiHeight() - panelHeight) / 2);
+        Vec3 faceOffset = Vec3.atLowerCornerOf(targetFace.getUnitVec3i()).scale(0.68D);
+        Vec3 anchor = Vec3.atCenterOf(target).add(faceOffset).add(0.0D, 1.05D, 0.0D);
+        Vec3 cameraPosition = client.gameRenderer.mainCamera().position();
+        Vec3 cameraToAnchor = anchor.subtract(cameraPosition);
+        var forward = client.gameRenderer.mainCamera().forwardVector();
+        if (cameraToAnchor.x * forward.x() + cameraToAnchor.y * forward.y() + cameraToAnchor.z * forward.z() <= 0.0D) {
+            return;
+        }
+
+        Vec3 projected = client.gameRenderer.projectPointToScreen(anchor);
+        int anchorX = (int) Math.round((projected.x + 1.0D) * 0.5D * graphics.guiWidth());
+        int anchorY = (int) Math.round((1.0D - projected.y) * 0.5D * graphics.guiHeight());
+        if (anchorX < -panelWidth || anchorX > graphics.guiWidth() + panelWidth
+                || anchorY < -panelHeight || anchorY > graphics.guiHeight() + panelHeight) {
+            return;
+        }
+
+        int gap = 12;
+        int left = anchorX + gap + panelWidth <= graphics.guiWidth() - 8
+                ? anchorX + gap
+                : anchorX - panelWidth - gap;
+        left = Math.max(8, Math.min(left, graphics.guiWidth() - panelWidth - 8));
+        int top = Math.max(8, Math.min(anchorY - panelHeight / 2, graphics.guiHeight() - panelHeight - 8));
         int accent = accentColor(preview);
+        int connectorY = Math.max(top + 4, Math.min(anchorY, top + panelHeight - 4));
+        if (left > anchorX) {
+            graphics.fill(anchorX, connectorY, left, connectorY + 1, accent);
+        } else {
+            graphics.fill(left + panelWidth, connectorY, anchorX, connectorY + 1, accent);
+        }
         graphics.fill(left, top, left + panelWidth, top + panelHeight, 0xD91A1F25);
         graphics.fill(left, top, left + 3, top + panelHeight, accent);
         graphics.outline(left, top, panelWidth, panelHeight, accent);
