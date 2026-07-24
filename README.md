@@ -10,7 +10,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/Minecraft-26.2-brightgreen?style=flat-square" alt="Minecraft 26.2">
-  <img src="https://img.shields.io/badge/NeoForge-26.2.0.32--beta-blue?style=flat-square" alt="NeoForge 26.2.0.32-beta">
+  <img src="https://img.shields.io/badge/NeoForge-26.2.0.10--beta%2B-blue?style=flat-square" alt="NeoForge 26.2.0.10-beta or newer">
   <img src="https://img.shields.io/badge/Java-25-orange?style=flat-square" alt="Java 25">
   <img src="https://img.shields.io/badge/Version-1.1.0-purple?style=flat-square" alt="Version 1.1.0">
   <img src="https://img.shields.io/badge/Install-Client%20%2F%20Server%20Independent-lightgrey?style=flat-square" alt="Client and server installations are independent">
@@ -36,7 +36,7 @@
 | 依赖 | 说明 |
 | --- | --- |
 | **Minecraft 26.2** | 游戏本体 |
-| **NeoForge 26.2.0.32-beta** | 目标加载器版本 |
+| **NeoForge 26.2.0.10-beta 或更高** | 最低兼容加载器版本 |
 | **Java 25** | 构建与运行环境 |
 
 ---
@@ -146,7 +146,7 @@ src/main/resources/
 
 ### 打开界面
 
-1. 要使用 Studio 界面时，将模组安装到 NeoForge 1.21.1 客户端；服务端是否安装不影响客户端连接。
+1. 要使用 Studio 界面时，将模组安装到 NeoForge 26.2 客户端；服务端是否安装不影响客户端连接。
 2. 进入拥有命令方块编辑权限的世界或服务器。
 3. 打开命令方块或命令方块矿车，界面会自动替换为增强版编辑器。
 
@@ -296,7 +296,7 @@ GitHub Pages 工作流位于 [`.github/workflows/docs.yml`](.github/workflows/do
   </tr>
   <tr>
     <td align="center"><b>原生平台</b></td>
-    <td>Minecraft 26.2 · NeoForge 26.2.0.32-beta</td>
+    <td>Minecraft 26.2 · NeoForge 26.2.0.10-beta+</td>
   </tr>
   <tr>
     <td align="center"><b>许可证</b></td>
