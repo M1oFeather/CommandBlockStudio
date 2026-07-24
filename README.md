@@ -12,7 +12,7 @@
   <img src="https://img.shields.io/badge/Minecraft-26.2-brightgreen?style=flat-square" alt="Minecraft 26.2">
   <img src="https://img.shields.io/badge/NeoForge-26.2.0.32--beta-blue?style=flat-square" alt="NeoForge 26.2.0.32-beta">
   <img src="https://img.shields.io/badge/Java-25-orange?style=flat-square" alt="Java 25">
-  <img src="https://img.shields.io/badge/Version-1.0.0-purple?style=flat-square" alt="Version 1.0.0">
+  <img src="https://img.shields.io/badge/Version-1.1.0-purple?style=flat-square" alt="Version 1.1.0">
   <img src="https://img.shields.io/badge/Install-Client%20%2F%20Server%20Independent-lightgrey?style=flat-square" alt="Client and server installations are independent">
   <img src="https://img.shields.io/badge/License-MIT-red?style=flat-square" alt="License MIT">
 </p>
@@ -243,7 +243,7 @@ IDE 的 `Client` 配置会读取 ModDevGradle 生成的 `build/moddev/clientRunV
 构建产物输出到：
 
 ```text
-build/libs/command_block_studio-1.0.0-26.2-NeoForge.jar
+build/libs/command_block_studio-1.1.0-26.2-NeoForge.jar
 ```
 
 ### 文档站

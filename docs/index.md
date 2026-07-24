@@ -55,7 +55,7 @@ Command Block Studio 是面向 Minecraft 26.2 的 NeoForge 原生命令方块编
 | NeoForge | `26.2.0.32-beta` |
 | Java | `25` |
 | Mod ID | `command_block_studio` |
-| 当前版本 | `1.0.0` |
+| 当前版本 | `1.1.0`（待发布） |
 | 客户端 | 可选；安装后提供 Studio 编辑器 |
 | 服务端 | 可选；安装后提供共享注释、编辑记录和增强的远程页签同步 |
 

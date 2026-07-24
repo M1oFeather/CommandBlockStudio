@@ -103,3 +103,10 @@ nav:
       - 构建与运行: development/building.md
       - 架构说明: development/architecture.md
       - 文档维护与部署: development/documentation.md
+  - 发布资料:
+      - 维护说明: publishing/index.md
+      - 1.1.0 共同信息: publishing/1.1.0/common.md
+      - 1.1.0 MC百科: publishing/1.1.0/mcmod.md
+      - 1.1.0 Modrinth: publishing/1.1.0/modrinth.md
+      - 1.1.0 CurseForge: publishing/1.1.0/curseforge.md
+      - 1.1.0 图片清单: publishing/1.1.0/media.md
