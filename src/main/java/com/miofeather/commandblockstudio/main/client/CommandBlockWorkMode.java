@@ -135,7 +135,7 @@ public final class CommandBlockWorkMode {
         float top = -panelHeight / 2.0F;
 
         Vec3 cameraPosition = event.getCamera().getPosition();
-        Vec3 faceOffset = Vec3.atLowerCornerOf(targetFace.getNormal()).scale(0.68D);
+        Vec3 faceOffset = Vec3.atLowerCornerOf(targetFace.getUnitVec3i()).scale(0.68D);
         Vec3 anchor = Vec3.atCenterOf(target).add(faceOffset).add(0.0D, 1.05D, 0.0D);
         PoseStack pose = event.getPoseStack();
         pose.pushPose();

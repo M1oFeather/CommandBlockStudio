@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.CommandBlock;
 import net.minecraft.world.level.block.entity.CommandBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderType;
 
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.Button;
@@ -1043,7 +1044,7 @@ public class CommandBlockStudioScreen extends AbstractCommandBlockStudioScreen {
                 } catch (IllegalArgumentException ignored) {
                     sprites = BLOCK_IMPULSE;
                 }
-                graphics.blitSprite(sprites.get(true, hovered), iconX, iconY, iconSize, iconSize);
+                graphics.blitSprite(RenderType::guiTextured, sprites.get(true, hovered), iconX, iconY, iconSize, iconSize);
 
                 String order = Integer.toString(index + 1);
                 int orderX = iconX + iconSize - font.width(order);

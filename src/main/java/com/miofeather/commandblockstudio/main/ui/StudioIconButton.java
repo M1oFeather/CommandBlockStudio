@@ -2,6 +2,7 @@ package com.miofeather.commandblockstudio.main.ui;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 
@@ -73,15 +74,16 @@ public final class StudioIconButton extends Button {
             smoothTextureConfigured = true;
         }
         graphics.blit(
+                RenderType::guiTextured,
                 icon,
                 iconX,
                 iconY,
-                drawSize,
-                drawSize,
                 0.0F,
                 0.0F,
                 ICON_TEXTURE_SIZE,
                 ICON_TEXTURE_SIZE,
+                drawSize,
+                drawSize,
                 ICON_TEXTURE_SIZE,
                 ICON_TEXTURE_SIZE
         );

@@ -10,6 +10,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Renderable;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.Mth;
@@ -177,7 +178,7 @@ public final class StudioInsightPanel implements Renderable {
         graphics.fill(x + 5, previewY, x + width - 5, previewY + 49, 0xFF101419);
         graphics.renderOutline(spriteX - 1, spriteY - 1, previewSize + 2, previewSize + 2, 0xFF343A42);
         if (preview.sprite() != null) {
-            graphics.blit(spriteX, spriteY, 0, previewSize, previewSize, preview.sprite());
+            graphics.blitSprite(RenderType::guiTextured, preview.sprite(), spriteX, spriteY, previewSize, previewSize);
         } else {
             MultiLineCommandSuggestor.renderFallbackParticle(graphics, preview.id(), spriteX, spriteY, previewSize);
         }

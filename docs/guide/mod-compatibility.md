@@ -36,13 +36,13 @@ Yuushya 等索引内未注册服务端命令的内容模组不需要单独命令
 
 ## 运行验证
 
-在 Minecraft 1.21.1、NeoForge 21.1.217 和 Java 21 环境中，已把索引中的兼容版本及其前置放入开发运行目录进行组合验证：
+通用命令树适配已迁移到 Minecraft 1.21.4、NeoForge 21.4.157 和 Java 21；本页列出的第三方模组组合启动结论来自 1.21.1 分支，1.21.4 使用时仍需选择对应游戏版本的模组文件：
 
 - WorldEdit、NeoForge Carpet、CMDCam、Corpse、Dynamic Trees、Exposure、Serene Seasons、Supplementaries、WaterFrames、SecurityCraft 及其必要前置可共同启动 dedicated server，并到达 `Done`。
 - 同一组合可启动客户端、进入单人世界、打开四方块连锁页签，并实际检查编辑器、搜索替换和转换器布局。
 - Command Block Studio 不直接引用这些模组的类；组合中出现的可选集成告警、非致命错误、缺少翻译或其他模组自身日志不会改变 Studio 的加载方式。
 
-以下两项受提供文件本身限制，不计入 NeoForge 21.1.217 的组合启动结论：
+以下两项受提供文件本身限制，不计入组合启动结论：
 
 - Create 6.0.10 的元数据要求 NeoForge 21.1.219 或更高版本。Studio 已收录其命令文档，但不能在目标 21.1.217 运行环境中强行加载该 JAR。
 - Yes Steve Model 2.5.1 在本机 Windows 客户端与 dedicated server 测试中都因其原生库返回 `err: 54` 而停止；Studio 仅按服务器实际下发的 `ysm` 命令树启用文档，不会主动加载 YSM 类。

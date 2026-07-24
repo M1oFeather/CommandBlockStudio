@@ -20,7 +20,7 @@ public class CommandBlockMinecartMixin {
         if(player instanceof LocalPlayer){
             Minecraft client = ((LocalPlayerAccessor)player).getMinecraft();
             client.setScreen(new CommandBlockStudioMinecartScreen(client, (MinecartCommandBlock)(Object)this));
-            return InteractionResult.sidedSuccess(true);
+            return InteractionResult.SUCCESS;
         }
         return commandBlock.usedBy(player);
     }

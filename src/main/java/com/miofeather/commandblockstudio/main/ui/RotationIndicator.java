@@ -1,9 +1,9 @@
 package com.miofeather.commandblockstudio.main.ui;
 
 import com.miofeather.commandblockstudio.main.CommandBlockStudio;
-import com.mojang.blaze3d.pipeline.RenderPipeline;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.renderer.RenderType;
 
 
 import net.minecraft.client.gui.narration.NarrationElementOutput;
@@ -45,11 +45,11 @@ public class RotationIndicator extends AbstractWidget {
     protected void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         int halfWidth = getWidth() / 2;
         int halfHeight = getHeight() / 2;
-        graphics.blitSprite(CommandBlockStudio.COMPASS_FRAME, getX(), getY(), getWidth(), getHeight());
+        graphics.blitSprite(RenderType::guiTextured, CommandBlockStudio.COMPASS_FRAME, getX(), getY(), getWidth(), getHeight());
         graphics.pose().pushPose();
         graphics.pose().translate(getX() + halfWidth, getY() + halfHeight, 0.0f);
         graphics.pose().mulPose(new Quaternionf().rotateZ((float) ((angle + 1) * Math.PI)));
-        graphics.blitSprite(CommandBlockStudio.COMPASS_NEEDLE, -halfWidth, -halfHeight, getWidth(), getHeight());
+        graphics.blitSprite(RenderType::guiTextured, CommandBlockStudio.COMPASS_NEEDLE, -halfWidth, -halfHeight, getWidth(), getHeight());
         graphics.pose().popPose();
     }
 

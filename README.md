@@ -5,14 +5,14 @@
 <h1 align="center">Command Block Studio</h1>
 
 <p align="center">
-  <em>A NeoForge-native command block editor upgrade for Minecraft 1.21.1</em>
+  <em>A NeoForge-native command block editor upgrade for Minecraft 1.21.4</em>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Minecraft-1.21.1-brightgreen?style=flat-square" alt="Minecraft 1.21.1">
-  <img src="https://img.shields.io/badge/NeoForge-21.1.217-blue?style=flat-square" alt="NeoForge 21.1.217">
+  <img src="https://img.shields.io/badge/Minecraft-1.21.4-brightgreen?style=flat-square" alt="Minecraft 1.21.4">
+  <img src="https://img.shields.io/badge/NeoForge-21.4.157-blue?style=flat-square" alt="NeoForge 21.4.157">
   <img src="https://img.shields.io/badge/Java-21-orange?style=flat-square" alt="Java 21">
-  <img src="https://img.shields.io/badge/Version-1.2.0-purple?style=flat-square" alt="Version 1.2.0">
+  <img src="https://img.shields.io/badge/Version-1.0.0-purple?style=flat-square" alt="Version 1.0.0">
   <img src="https://img.shields.io/badge/Install-Client%20%2F%20Server%20Independent-lightgrey?style=flat-square" alt="Client and server installations are independent">
   <img src="https://img.shields.io/badge/License-MIT-red?style=flat-square" alt="License MIT">
 </p>
@@ -21,7 +21,7 @@
 
 ## 简介
 
-**Command Block Studio** 是面向 Minecraft 1.21.1 NeoForge 的原生命令方块开发工作台。
+**Command Block Studio** 是面向 Minecraft 1.21.4 NeoForge 的原生命令方块开发工作台。
 
 它会替换原版命令方块编辑界面，把单行输入框升级为接近代码编辑器的命令工作台，并提供多行可视排版、Brigadier 补全、快速文档、参数填入、问题诊断、输出面板和区域选择辅助。客户端与服务端可以完全独立安装：客户端单独安装即可使用编辑器，服务端单独安装也不会阻止原版客户端连接；双端都安装时会额外启用共享注释、版本化编辑记录和增强的工作区同步。
 
@@ -35,8 +35,8 @@
 
 | 依赖 | 说明 |
 | --- | --- |
-| **Minecraft 1.21.1** | 游戏本体 |
-| **NeoForge 21.1.217** | 目标加载器版本 |
+| **Minecraft 1.21.4** | 游戏本体 |
+| **NeoForge 21.4.157** | 目标加载器版本 |
 | **Java 21** | 构建与运行环境 |
 
 ---
@@ -243,7 +243,7 @@ IDE 的 `Client` 配置会读取 ModDevGradle 生成的 `build/moddev/clientRunV
 构建产物输出到：
 
 ```text
-build/libs/command_block_studio-1.2.0-1.21.1-NeoForge.jar
+build/libs/command_block_studio-1.0.0-1.21.4-NeoForge.jar
 ```
 
 ### 文档站
@@ -296,7 +296,7 @@ GitHub Pages 工作流位于 [`.github/workflows/docs.yml`](.github/workflows/do
   </tr>
   <tr>
     <td align="center"><b>原生平台</b></td>
-    <td>Minecraft 1.21.1 · NeoForge 21.1.217</td>
+    <td>Minecraft 1.21.4 · NeoForge 21.4.157</td>
   </tr>
   <tr>
     <td align="center"><b>许可证</b></td>

@@ -67,22 +67,22 @@ public class ScrollbarWidget extends AbstractWidget {
             ResourceLocation textures = SCROLLBAR_HORIZONTAL.get(enabled,hovered);
             int drawY = this.getY() + this.height - thickness;
             int sourceY = 10 - thickness;
-            graphics.blitSprite( textures, textureLength, 10, 0, sourceY, this.getX() + position, drawY, Math.min(boxLength / 2, textureLength / 2), thickness);
-            graphics.blitSprite( textures, textureLength, 10, Math.max(textureLength/2, textureLength - boxLength / 2), sourceY, Math.max(this.getX() + position + boxLength/2, this.getX() + position + boxLength - textureLength/2), drawY, Math.min(boxLength / 2, textureLength / 2), thickness);
+            graphics.blitSprite(RenderType::guiTextured, textures, textureLength, 10, 0, sourceY, this.getX() + position, drawY, Math.min(boxLength / 2, textureLength / 2), thickness);
+            graphics.blitSprite(RenderType::guiTextured, textures, textureLength, 10, Math.max(textureLength/2, textureLength - boxLength / 2), sourceY, Math.max(this.getX() + position + boxLength/2, this.getX() + position + boxLength - textureLength/2), drawY, Math.min(boxLength / 2, textureLength / 2), thickness);
             int drawX = this.getX() + position + textureLength/2;
             for (int i=0; i<(repeatLength/(textureLength/2))+1; i++){
-                graphics.blitSprite( textures, textureLength, 10, textureLength/4, sourceY, drawX, drawY, Math.min((repeatLength - i*textureLength/2), textureLength/2), thickness);
+                graphics.blitSprite(RenderType::guiTextured, textures, textureLength, 10, textureLength/4, sourceY, drawX, drawY, Math.min((repeatLength - i*textureLength/2), textureLength/2), thickness);
                 drawX += textureLength/2;
             }
         } else {
             ResourceLocation textures = SCROLLBAR_VERTICAL.get(enabled,hovered);
             int drawX = this.getX() + this.width - thickness;
             int sourceX = 10 - thickness;
-            graphics.blitSprite( textures, 10 , textureLength, sourceX, 0, drawX, this.getY() + position, thickness, Math.min(boxLength / 2, textureLength / 2));
-            graphics.blitSprite( textures, 10 , textureLength, sourceX, Math.max(textureLength/2, textureLength - boxLength / 2), drawX, Math.max(this.getY() + position + boxLength/2, this.getY() + position + boxLength - textureLength/2), thickness, Math.min(boxLength / 2, textureLength / 2));
+            graphics.blitSprite(RenderType::guiTextured, textures, 10 , textureLength, sourceX, 0, drawX, this.getY() + position, thickness, Math.min(boxLength / 2, textureLength / 2));
+            graphics.blitSprite(RenderType::guiTextured, textures, 10 , textureLength, sourceX, Math.max(textureLength/2, textureLength - boxLength / 2), drawX, Math.max(this.getY() + position + boxLength/2, this.getY() + position + boxLength - textureLength/2), thickness, Math.min(boxLength / 2, textureLength / 2));
             int drawY = this.getY() + textureLength/2;
             for (int i=0; i<(repeatLength/(textureLength/2))+1; i++){
-                graphics.blitSprite( textures, 10, textureLength, sourceX, textureLength/4, drawX, drawY, thickness, Math.min((repeatLength - i*textureLength/2), textureLength/2));
+                graphics.blitSprite(RenderType::guiTextured, textures, 10, textureLength, sourceX, textureLength/4, drawX, drawY, thickness, Math.min((repeatLength - i*textureLength/2), textureLength/2));
                 drawY += textureLength/2;
             }
         }

@@ -34,7 +34,7 @@ public class NotchedSlider extends AbstractWidget {
     public void renderWidget(GuiGraphics graphics, int mouseX, int mouseY, float delta) {
         //RenderSystem.setShaderTexture(0, SLIDER);
         graphics.blitSprite(
-                
+                RenderType::guiTextured,
                 SLIDER,
                 512,
                 16,
@@ -46,7 +46,7 @@ public class NotchedSlider extends AbstractWidget {
                 16
         );
         graphics.blitSprite(
-                
+                RenderType::guiTextured,
                 SLIDER,
                 512,
                 16,
@@ -58,7 +58,7 @@ public class NotchedSlider extends AbstractWidget {
                 16
         );
         graphics.blitSprite(
-                
+                RenderType::guiTextured,
                 SLIDER,
                 512,
                 16,
@@ -74,7 +74,7 @@ public class NotchedSlider extends AbstractWidget {
         float step = 1.0f/((float)subdivisions);
         for(int i=1; i<subdivisions; i++){
             graphics.blitSprite(
-                    
+                    RenderType::guiTextured,
                     SLIDER_NOTCH,
                     4,
                     16,
@@ -89,7 +89,7 @@ public class NotchedSlider extends AbstractWidget {
 
         //RenderSystem.setShaderTexture(0, SLIDER_PICK);
         graphics.blitSprite(
-                
+                RenderType::guiTextured,
                 SLIDER_PICK.get(true, isHovered),
                 (int) (getX() + (pos * getWidth()) - 4),
                 getY(),

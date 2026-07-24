@@ -10,6 +10,7 @@ import net.minecraft.client.multiplayer.PlayerInfo;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.resources.DefaultPlayerSkin;
 import net.minecraft.client.resources.PlayerSkin;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -53,13 +54,13 @@ final class CommandSuggestionVisual {
     ) {
         ResourceLocation id = ResourceLocation.tryParse(suggestion);
         if (id != null && insightService.isBlockSuggestion(command, cursor, suggestion)) {
-            ItemStack stack = new ItemStack(BuiltInRegistries.BLOCK.get(id).asItem());
+            ItemStack stack = new ItemStack(BuiltInRegistries.BLOCK.getValue(id).asItem());
             if (!stack.isEmpty()) {
                 return Optional.of(item(suggestion, stack));
             }
         }
         if (id != null && insightService.isItemSuggestion(command, cursor, suggestion)) {
-            ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.get(id));
+            ItemStack stack = new ItemStack(BuiltInRegistries.ITEM.getValue(id));
             if (!stack.isEmpty()) {
                 return Optional.of(item(suggestion, stack));
             }
@@ -121,7 +122,7 @@ final class CommandSuggestionVisual {
         if (particleId != null) {
             TextureAtlasSprite sprite = particleSprite();
             if (sprite != null) {
-                graphics.blit(x, y, 0, size, size, sprite);
+                graphics.blitSprite(RenderType::guiTextured, sprite, x, y, size, size);
             } else {
                 renderFallbackParticle(graphics, particleId, x, y, size);
             }

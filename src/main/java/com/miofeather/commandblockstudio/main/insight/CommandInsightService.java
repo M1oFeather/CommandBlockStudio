@@ -227,7 +227,7 @@ public class CommandInsightService {
                 || !expectsArgument(command, cursor, Set.of("ResourceArgument", "ResourceOrTagArgument"), "enchant")) {
             return false;
         }
-        return minecraft.level.registryAccess().registry(Registries.ENCHANTMENT)
+        return minecraft.level.registryAccess().lookup(Registries.ENCHANTMENT)
                 .map(registry -> registry.containsKey(id))
                 .orElse(false);
     }
@@ -258,7 +258,7 @@ public class CommandInsightService {
         ResourceLocation id = ResourceLocation.tryParse(suggestion);
         boolean chinese = CommandBlockStudio.useChineseCommandInsight();
         if (id != null && isBlockSuggestion(command, cursor, suggestion)) {
-            Block block = BuiltInRegistries.BLOCK.get(id);
+            Block block = BuiltInRegistries.BLOCK.getValue(id);
             String properties = block.getStateDefinition().getProperties().stream()
                     .map(property -> property.getName())
                     .sorted()
@@ -271,7 +271,7 @@ public class CommandInsightService {
         }
 
         if (id != null && isItemSuggestion(command, cursor, suggestion)) {
-            String itemName = BuiltInRegistries.ITEM.get(id).getDescription().getString();
+            String itemName = BuiltInRegistries.ITEM.getValue(id).getName().getString();
             String summary = chinese
                     ? "物品 " + itemName + "；来自当前服务器物品注册表。"
                     : "Item " + itemName + "; from the active server item registry.";
@@ -279,7 +279,7 @@ public class CommandInsightService {
         }
 
         if (id != null && isEnchantmentSuggestion(command, cursor, suggestion) && minecraft.level != null) {
-            Optional<Registry<Enchantment>> registry = minecraft.level.registryAccess().registry(Registries.ENCHANTMENT);
+            Optional<Registry<Enchantment>> registry = minecraft.level.registryAccess().lookup(Registries.ENCHANTMENT);
             Optional<Enchantment> enchantment = registry.flatMap(value -> value.getOptional(id));
             if (enchantment.isPresent()) {
                 Enchantment value = enchantment.get();
