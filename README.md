@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="src/main/resources/assets/command_block_studio/icon.png" alt="Command Block Studio Logo" width="160"/>
+  <img src="src/main/resources/assets/command_block_studio/icon.png" alt="命令坊块（Command Block Studio）Logo" width="160"/>
 </p>
 
-<h1 align="center">Command Block Studio</h1>
+<h1 align="center">命令坊块 / Command Block Studio</h1>
 
 <p align="center">
-  <em>A NeoForge-native command block development workspace for multiple Minecraft versions</em>
+  <em>NeoForge 原生的多版本命令方块开发工作台</em>
 </p>
 
 <p align="center">
@@ -21,7 +21,7 @@
 
 ## 简介
 
-**Command Block Studio** 是面向多个 Minecraft 版本持续维护的 NeoForge 原生命令方块开发工作台。
+**命令坊块（Command Block Studio）** 是面向多个 Minecraft 版本持续维护的 NeoForge 原生命令方块开发工作台。
 
 它会替换原版命令方块编辑界面，把单行输入框升级为接近代码编辑器的命令工作台，并提供多行可视排版、Brigadier 补全、快速文档、参数填入、问题诊断、输出面板和区域选择辅助。客户端与服务端可以完全独立安装：客户端单独安装即可使用编辑器，服务端单独安装也不会阻止原版客户端连接；双端都安装时会额外启用共享注释、版本化编辑记录和增强的工作区同步。
 

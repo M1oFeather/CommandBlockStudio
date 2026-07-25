@@ -4,7 +4,7 @@
   <img class="cbs-logo" src="assets/icon.png" alt="Command Block Studio 图标">
 </p>
 
-Command Block Studio 是面向多个 Minecraft 版本持续维护的 NeoForge 原生命令方块编辑工作台。它把原版单行输入框替换为具有多行排版、Brigadier 补全、快速文档、语法诊断和工作区页签的编辑器。
+命令坊块（Command Block Studio）是面向多个 Minecraft 版本持续维护的 NeoForge 原生命令方块编辑工作台。它把原版单行输入框替换为具有多行排版、Brigadier 补全、快速文档、语法诊断和工作区页签的编辑器。
 
 !!! info "原生 NeoForge 实现"
     项目基于 NeoForge 官方 MDK 结构，每个 Minecraft 版本使用独立分支和对应的 NeoForge 原生 API，不依赖 Fabric API、Architectury 或加载器兼容层。
