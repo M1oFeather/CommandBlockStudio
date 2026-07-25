@@ -208,7 +208,7 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
             int iconGutter = suggestionIconsVisible ? 13 : 0;
             int minX = input.getX() + 4 + iconGutter;
             int maxX = Math.max(minX, input.getX() + input.getWidth() - popupWidth - 4);
-            int popupX = Math.max(minX, Math.min(this.x, maxX));
+            int popupX = Math.max(minX, Math.min(this.x + iconGutter, maxX));
             int popupY = EditorOverlayPlacement.placeVertical(
                     this.y,
                     this.y - accessor.getFont().lineHeight - 4,
@@ -309,6 +309,14 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
             return Optional.empty();
         }
         return Optional.of(new ParticlePreview(visual.particleId(), visual.particleSprite()));
+    }
+
+    public Optional<CommandSuggestionVisual> getSelectedVisual() {
+        SuggestionWindowAccessor window = (SuggestionWindowAccessor) accessor.getSuggestions();
+        if (window == null || window.getCurrent() < 0 || window.getCurrent() >= window.getSuggestionList().size()) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(suggestionVisuals.get(window.getSuggestionList().get(window.getCurrent())));
     }
 
     public static void renderFallbackParticle(GuiGraphics graphics, ResourceLocation id, int x, int y, int size) {
@@ -442,7 +450,13 @@ public class MultiLineCommandSuggestor extends CommandSuggestions {
             return false;
         }
 
-        StringRange range = StringRange.between(hint.get().replacementStart(), cursor);
+        MultiLineTextFieldWidget input = (MultiLineTextFieldWidget) accessor.getInput();
+        int selectionStart = Math.min(input.getCursorPosition(), input.getHighlightPosition());
+        int selectionEnd = Math.max(input.getCursorPosition(), input.getHighlightPosition());
+        int replacementEnd = cursor == selectionStart && hint.get().replacementStart() <= selectionStart
+                ? selectionEnd
+                : cursor;
+        StringRange range = StringRange.between(hint.get().replacementStart(), replacementEnd);
         List<Suggestion> candidates = hint.get().suggestions().stream()
                 .map(value -> new Suggestion(range, value))
                 .toList();

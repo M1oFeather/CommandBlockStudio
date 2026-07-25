@@ -46,8 +46,6 @@ import java.util.Deque;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Stack;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 public class MultiLineTextFieldWidget extends EditBox implements GuiEventListener {
@@ -57,9 +55,6 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
     private static final int COMPACT_SCROLLBAR_RESERVE = 3;
     private static final int STATUS_BAR_HEIGHT = 17;
     private static final int TEXT_TOP_PADDING = 5;
-    private static final Pattern NUMBER_TOKEN = Pattern.compile(
-            "(?<![A-Za-z0-9_.])[-+]?(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][-+]?\\d+)?"
-    );
     private StudioScaledScreen screen;
     private ScrollbarWidget scrollX, scrollY;
     private List<String> lines;
@@ -71,6 +66,9 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
     private Pair<Integer, Integer> cursorPosPreference;
     private boolean LShiftPressed, RShiftPressed = false;
     private boolean hasCommandSuggestor = false;
+    private boolean commandEditorPresentation = true;
+    private boolean externalSuggestorRendering;
+    private boolean externalDockedInsightPanel;
     private boolean textModified = false;
     private MultiLineCommandSuggestor suggestor;
     private EditBoxAccessor accessor = (EditBoxAccessor)this;
@@ -89,8 +87,8 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
     private int statusBarY1;
     private int statusBarX2;
     private int statusBarY2;
-    private int clickedNumberStart = -1;
-    private int clickedNumberEnd = -1;
+    private int clickedTokenStart = -1;
+    private int clickedTokenEnd = -1;
 
     public MultiLineTextFieldWidget(Font textRenderer, int x, int y, int width, int height, Component text, StudioScaledScreen screen) {
         super(textRenderer, x, y, width, height, text);
@@ -141,6 +139,10 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
     public void renderWidget(final GuiGraphics graphics, int mouseX, int mouseY, float delta){
         timeSinceClick += delta/20.0f;
         visibleStatusDiagnostic = null;
+        if (!commandEditorPresentation) {
+            super.renderWidget(graphics, mouseX, mouseY, delta);
+            return;
+        }
         int color;
         if (!this.isVisible()) {
             return;
@@ -167,7 +169,9 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         if(hasCommandSuggestor) {
             if(lines.isEmpty()){
                 graphics.disableScissor();
-                renderSuggestor(graphics, mouseX, mouseY);
+                if (!externalSuggestorRendering) {
+                    renderSuggestor(graphics, mouseX, mouseY);
+                }
                 return;
             }
 
@@ -258,7 +262,9 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         renderInlineSuggestion(graphics);
         graphics.disableScissor();
         renderCursorInsight(graphics);
-        renderSuggestor(graphics, mouseX, mouseY);
+        if (!externalSuggestorRendering) {
+            renderSuggestor(graphics, mouseX, mouseY);
+        }
         renderHoverInsight(graphics, mouseX, mouseY);
     }
 
@@ -303,7 +309,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
     }
 
     private int getLineNumberGutterWidth() {
-        if (!hasCommandSuggestor) {
+        if (!hasCommandSuggestor || !commandEditorPresentation) {
             return 0;
         }
         int digits = Integer.toString(Math.max(1, lines.size())).length();
@@ -420,7 +426,10 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
     private void renderSuggestor(GuiGraphics graphics, int mouseX, int mouseY){
         if(suggestor.getY() > getY() + getHeight() || suggestor.getY() < getY()) return;
         if(suggestor.getX() > getX() + getWidth() || suggestor.getX() < getX()) return;
+        graphics.pose().pushPose();
+        graphics.pose().translate(0.0F, 0.0F, 200.0F);
         suggestor.render(graphics, mouseX, mouseY);
+        graphics.pose().popPose();
     }
 
     private void renderCursorInsight(GuiGraphics graphics) {
@@ -599,7 +608,8 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
     }
 
     public boolean usesDockedInsightPanel() {
-        return screen instanceof AbstractCommandBlockStudioScreen studioScreen
+        return externalDockedInsightPanel
+                || screen instanceof AbstractCommandBlockStudioScreen studioScreen
                 && studioScreen.isQuickDocsVisible();
     }
 
@@ -764,6 +774,18 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
     public void setCommandSuggestor(MultiLineCommandSuggestor newSuggestor){
         this.suggestor = newSuggestor;
         this.hasCommandSuggestor = true;
+    }
+
+    public void setCommandEditorPresentation(boolean enabled) {
+        this.commandEditorPresentation = enabled;
+    }
+
+    public void setExternalSuggestorRendering(boolean external) {
+        this.externalSuggestorRendering = external;
+    }
+
+    public void setExternalDockedInsightPanel(boolean external) {
+        this.externalDockedInsightPanel = external;
     }
 
     @Override
@@ -1244,6 +1266,10 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
 
     private static boolean isClosingCharacter(char character) {
         return character == '}' || character == ']' || character == ')' || character == '"' || character == '\'';
+    }
+
+    private static boolean isQuote(char character) {
+        return character == '"' || character == '\'';
     }
 
     private void beginHistoryEdit(EditKind kind, boolean forceCheckpoint) {
@@ -1746,49 +1772,47 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         }
         if(this.isFocused() && hovered && mouseY < getTextViewportBottom() && button == 0) {
             int clickedIndex = pointToIndex(mouseX, mouseY);
-            boolean handledNumber = !Screen.hasShiftDown() && handleNumberClick(clickedIndex);
-            if (!handledNumber) {
-                clearClickedNumber();
+            boolean handledToken = !Screen.hasShiftDown() && handleTokenClick(clickedIndex);
+            if (!handledToken) {
+                clearClickedToken();
                 this.moveCursorTo(clickedIndex, Screen.hasShiftDown());
             }
             cursorPosPreference = new Pair<>((int)mouseX, (int)mouseY);
-            if(!handledNumber && timeSinceClick < 0.25f){
+            if(!handledToken && timeSinceClick < 0.25f){
                 selectWord();
             }
             timeSinceClick = 0.0f;
         }
     }
 
-    private boolean handleNumberClick(int clickedIndex) {
-        if (clickedNumberStart >= 0
-                && accessor.getCursorPos() == clickedNumberStart
-                && accessor.getHighlightPos() == clickedNumberEnd
-                && clickedIndex >= clickedNumberStart
-                && clickedIndex <= clickedNumberEnd) {
-            accessor.setCursorPos(clickedNumberEnd);
-            accessor.setHighlightPos(clickedNumberEnd);
-            clearClickedNumber();
+    private boolean handleTokenClick(int clickedIndex) {
+        if (clickedTokenStart >= 0
+                && accessor.getCursorPos() == clickedTokenStart
+                && accessor.getHighlightPos() == clickedTokenEnd
+                && clickedIndex >= clickedTokenStart
+                && clickedIndex <= clickedTokenEnd) {
+            accessor.setCursorPos(clickedTokenEnd);
+            accessor.setHighlightPos(clickedTokenEnd);
+            clearClickedToken();
             onChanged(accessor.getValue(), false);
             return true;
         }
 
-        Matcher matcher = NUMBER_TOKEN.matcher(accessor.getValue());
-        while (matcher.find()) {
-            if (clickedIndex >= matcher.start() && clickedIndex <= matcher.end()) {
-                clickedNumberStart = matcher.start();
-                clickedNumberEnd = matcher.end();
-                accessor.setCursorPos(clickedNumberStart);
-                accessor.setHighlightPos(clickedNumberEnd);
-                onChanged(accessor.getValue(), false);
-                return true;
-            }
+        Optional<EditorTokenSelection.Range> range = EditorTokenSelection.at(accessor.getValue(), clickedIndex);
+        if (range.isPresent()) {
+            clickedTokenStart = range.get().start();
+            clickedTokenEnd = range.get().end();
+            accessor.setCursorPos(clickedTokenStart);
+            accessor.setHighlightPos(clickedTokenEnd);
+            onChanged(accessor.getValue(), false);
+            return true;
         }
         return false;
     }
 
-    private void clearClickedNumber() {
-        clickedNumberStart = -1;
-        clickedNumberEnd = -1;
+    private void clearClickedToken() {
+        clickedTokenStart = -1;
+        clickedTokenEnd = -1;
     }
 
     @Override
@@ -1841,7 +1865,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         }
 
         if (this.isHovered() && this.isFocused()){
-            clearClickedNumber();
+            clearClickedToken();
             setCursorPosition(pointToIndex(mouseX, mouseY));
         }
     }
@@ -2036,7 +2060,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         accessor.setCursorPos(clamp(start, 0, accessor.getValue().length()));
         accessor.setHighlightPos(clamp(end, 0, accessor.getValue().length()));
         setFocused(true);
-        clearClickedNumber();
+        clearClickedToken();
         revealCursor();
     }
 
@@ -2102,16 +2126,21 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         }
     }
 
-    void refreshSuggestorPos(){
+    public void refreshSuggestorPos(){
         if(!hasCommandSuggestor || suggestor == null || accessor.getFont() == null) return;
-        int selectionStart = accessor.getCursorPos();
-        int selectionEnd = accessor.getHighlightPos();
-
-        if(selectionStart > selectionEnd){
-            selectionStart = selectionEnd;
+        int selectionStart = Math.min(accessor.getCursorPos(), accessor.getHighlightPos());
+        int selectionEnd = Math.max(accessor.getCursorPos(), accessor.getHighlightPos());
+        int anchorIndex = selectionEnd;
+        String value = accessor.getValue();
+        if (selectionStart < selectionEnd
+                && selectionStart > 0
+                && selectionEnd < value.length()
+                && isQuote(value.charAt(selectionStart - 1))
+                && value.charAt(selectionEnd) == value.charAt(selectionStart - 1)) {
+            anchorIndex++;
         }
-        Pair<Integer, Integer> cursor = indexToLineAndOffset(selectionStart);
-        int selectionStartOffset = Math.max(cursor.getB() - horizontalOffset, 0);
+        Pair<Integer, Integer> cursor = indexToLineAndOffset(anchorIndex);
+        int anchorOffset = Math.max(cursor.getB() - horizontalOffset, 0);
         int fontHeight = accessor.getFont().lineHeight + 1;
         if(lines.isEmpty()){
             suggestor.setPos(getTextLeft(), getY() + 5 + fontHeight);
@@ -2120,7 +2149,7 @@ public class MultiLineTextFieldWidget extends EditBox implements GuiEventListene
         }
         String line = lines.get(cursor.getA());
         line = line.substring(clamp(horizontalOffset, 0,line.length()));
-        int x = getTextLeft() + accessor.getFont().width(line.substring(0, Math.min(selectionStartOffset,line.length())));
+        int x = getTextLeft() + accessor.getFont().width(line.substring(0, Math.min(anchorOffset,line.length())));
         int y = this.getY() + 5 + fontHeight + (cursor.getA() - scrolledLines) * fontHeight;
 
         suggestor.setPos(x, y);

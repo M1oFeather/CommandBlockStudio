@@ -9,9 +9,9 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Minecraft-1.20.4%20%7C%201.21.1%20%7C%201.21.4%20%7C%2026.2-brightgreen?style=flat-square" alt="Minecraft 1.20.4, 1.21.1, 1.21.4 and 26.2">
+  <img src="https://img.shields.io/badge/Minecraft-Multi--version-brightgreen?style=flat-square" alt="Multiple Minecraft versions">
   <img src="https://img.shields.io/badge/NeoForge-Native-blue?style=flat-square" alt="NeoForge Native">
-  <img src="https://img.shields.io/badge/Java-17%20%7C%2021-orange?style=flat-square" alt="Java 17 and 21">
+  <img src="https://img.shields.io/badge/Java-17%20%7C%2021%20%7C%2025-orange?style=flat-square" alt="Java 17, 21 and 25">
   <img src="https://img.shields.io/badge/Version-1.1.0-purple?style=flat-square" alt="Version 1.1.0">
   <img src="https://img.shields.io/badge/Install-Client%20%2F%20Server%20Independent-lightgrey?style=flat-square" alt="Client and server installations are independent">
   <img src="https://img.shields.io/badge/License-MIT-red?style=flat-square" alt="License MIT">
@@ -21,7 +21,7 @@
 
 ## 简介
 
-**Command Block Studio** 是面向 Minecraft `1.20.4`、`1.21.1`、`1.21.4` 与 `26.2` 的 NeoForge 原生命令方块开发工作台。
+**Command Block Studio** 是面向多个 Minecraft 版本持续维护的 NeoForge 原生命令方块开发工作台。
 
 它会替换原版命令方块编辑界面，把单行输入框升级为接近代码编辑器的命令工作台，并提供多行可视排版、Brigadier 补全、快速文档、参数填入、问题诊断、输出面板和区域选择辅助。客户端与服务端可以完全独立安装：客户端单独安装即可使用编辑器，服务端单独安装也不会阻止原版客户端连接；双端都安装时会额外启用共享注释、版本化编辑记录和增强的工作区同步。
 
@@ -40,7 +40,7 @@
 | `1.21.4` | `21.4.121` | `1.21.4` | `command_block_studio-<模组版本>-1.21.4-NeoForge.jar` |
 | `26.2` | `26.2.0.10-beta` | `26.2` | `command_block_studio-<模组版本>-26.2-NeoForge.jar` |
 
-`1.20.4` 使用 Java 17，`1.21.1`、`1.21.4` 与 `26.2` 使用 Java 21。下载时请让文件名中的 Minecraft 版本与游戏实例完全一致；详细选择方法见[版本选择](docs/releases/versions.md)。
+`1.20.4` 使用 Java 17，`1.21.1` 与 `1.21.4` 使用 Java 21，`26.2` 使用 Java 25。下载时请让文件名中的 Minecraft 版本与游戏实例完全一致；详细选择方法见[版本选择](docs/releases/versions.md)。
 
 ---
 
@@ -66,7 +66,7 @@
 
 ### 命令智能提示
 
-- **聊天命令助手**：聊天框内容以 `/` 开头时，右侧自动展开约四分之一屏幕宽的命令助手；它复用 Studio 的参数文档、增强补全、粒子/方块/物品预览和玩家头像信息，普通聊天时完全隐藏。
+- **聊天命令编辑器**：聊天框内容以 `/` 开头时，左下角自动展开 Studio 多行编辑器，右侧保留约四分之一屏幕宽的命令助手；它复用 Studio 的结构化换行、参数文档、增强补全、粒子/方块/物品预览和玩家头像信息，普通聊天时恢复为原版紧凑输入框。
 - **悬停解释**：鼠标停在命令或参数上时，显示当前命令节点的说明与示例。
 - **当前参数提示**：光标所在参数会在编辑器底部显示简短解释，接近代码编辑器的 signature help。
 - **原生自动补全**：补全候选来自当前连接的 Brigadier 命令树，并在光标后显示灰色幽灵文本；悬停候选项可查看对应命令或参数说明。
@@ -96,8 +96,9 @@
 - **即时方块控制**：命令方块类型、条件模式和红石模式点击后立即同步；命令文本按自动保存或手动保存策略提交。
 - **共享方块注释**：服务端同时安装模组时，注释入口紧跟在左侧活动栏的工具入口后；有权限的编辑者可说明命令方块用途，内容随方块持久化并由服务端同步。
 - **版本化编辑记录**：服务端为每个命令方块保留最近 10 个完整版本，包括命令、方块模式、条件、红石需求和输出追踪；注释页可选择旧版本回滚，当前版本仍会作为历史保留。
-- **背包命令摘要**：带方块实体数据的命令方块物品会在悬停提示中显示命令开头；若物品同时携带 Studio 编辑历史，还会显示最后编辑时间和编辑者。
-- **工作模式投影**：默认按 `Alt+Tab` 切换工作模式，准星指向命令方块时会在该方块前方悬浮显示命令、模式、坐标与最后编辑信息；投影始终朝向玩家。快捷键可在“控制 -> 按键绑定 -> Command Block Studio”中修改；若操作系统拦截 `Alt+Tab`，请改绑为其他组合键。
+- **背包命令摘要**：带方块实体数据的命令方块物品会在悬停提示中按 Studio 规则换行显示命令开头；若物品携带共享注释，注释会紧跟物品名显示，Studio 编辑历史则提供最后编辑时间和编辑者。
+- **工作模式投影**：默认按 `Alt+Tab` 切换工作模式，或在创造模式“工具与实用物品”分类取得命令方块扫描仪并手持使用。准星指向命令方块时会在首次命中的方块表面前方悬浮显示共享注释、经过 Studio 结构化换行的命令、模式、坐标与最后编辑信息；准星未离开该方块前，投影锚点不会在相邻表面之间跳动。
+- **可选安装扫描仪**：扫描仪使用带 Studio 标记的原版望远镜物品栈，不注册新物品或方块，因此不会改变客户端与服务端均可选安装的兼容设计。
 - **运行测试**：编辑器底部的播放按钮会先保存当前修改，再让服务端触发一次命令方块，无需临时放置红石块。
 - **逐功能兼容**：客户端与服务端版本号允许不同；注释、预览、运行测试等功能分别检查载荷通道，不支持的入口会隐藏或禁用。
 
@@ -248,6 +249,14 @@ IDE 的 `Client` 配置会读取 ModDevGradle 生成的 `build/moddev/clientRunV
 ```text
 build/libs/command_block_studio-1.1.0-<Minecraft版本>-NeoForge.jar
 ```
+
+若同级目录已准备 `CommandBlockStudio-1.20.4`、`CommandBlockStudio-1.21.4` 和 `CommandBlockStudio-26.2` worktree，可从默认 `1.21.1` worktree 一次构建全部支持版本：
+
+```powershell
+.\gradlew.bat --no-daemon --console plain buildAllVersions
+```
+
+Gradle 会先校验四个 worktree 的 Minecraft/模组版本，分别使用各分支自己的 Wrapper 和 Java Toolchain 构建，再将四个 JAR 汇总到 `dist/1.1.0/`。可通过 `-PreleaseOutputDir=<目录>` 覆盖输出位置。
 
 ### 文档站
 

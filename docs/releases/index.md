@@ -40,7 +40,7 @@ docs/releases/
 | `<版本>/platforms/*.md` | 各平台字段、简介和上传文本 |
 | `<版本>/media.md` | 封面、功能截图、图注与发布前检查 |
 
-根目录 `CHANGELOG.md` 保留英文开发日志。每次发布时，必须同时更新根日志、中文总日志和当前版本 Release Notes。
+根目录 `CHANGELOG.md` 与 `CHANGELOG.zh-CN.md` 分别提供英文和简体中文入口。每次发布时，必须同时更新两个根日志、中文总日志和当前版本 Release Notes。
 
 ## 发布流程
 

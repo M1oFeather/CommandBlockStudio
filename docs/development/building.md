@@ -14,7 +14,7 @@
 
 仓库保留 NeoForge 官方 MDK 的 Gradle Wrapper、资源模板展开和运行配置结构。
 
-`1.20.4` 分支保留该版本官方 MDK 的 NeoGradle 7 与 Java 17 工具链；较新的三个分支使用 Java 21 和各自模板对应的 ModDevGradle。
+`1.20.4` 分支保留该版本官方 MDK 的 NeoGradle 7 与 Java 17 工具链；`1.21.1` 与 `1.21.4` 使用 Java 21，`26.2` 使用 Java 25，并各自采用模板对应的 ModDevGradle。
 
 ## 构建模组
 
@@ -37,6 +37,30 @@ build/libs/command_block_studio-1.1.0-<Minecraft版本>-NeoForge.jar
 ```
 
 `build` 结束后会自动执行 `prepareClientRun`，确保 IDE 运行参数文件存在。
+
+## 一次构建全部支持版本
+
+在默认 `1.21.1` worktree 的同级目录准备以下 worktree：
+
+```text
+CommandBlockStudio-1.20.4
+CommandBlockStudio-1.21.4
+CommandBlockStudio-26.2
+```
+
+随后只需运行：
+
+```powershell
+.\gradlew.bat --no-daemon --console plain buildAllVersions
+```
+
+该任务会校验四个 worktree 的 `minecraft_version` 与 `mod_version`，调用各分支自己的 Gradle Wrapper 和 Java Toolchain，并将所有 JAR 汇总到：
+
+```text
+dist/1.1.0/
+```
+
+使用 `-PreleaseOutputDir=<目录>` 可以覆盖输出位置。各版本依次构建，避免 NeoForge/Gradle 缓存和内存相互争用。
 
 ## 启动开发客户端
 

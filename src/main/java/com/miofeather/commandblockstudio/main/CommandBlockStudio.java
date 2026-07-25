@@ -3,9 +3,12 @@ package com.miofeather.commandblockstudio.main;
 import com.miofeather.commandblockstudio.main.config.ConfigScreen;
 import com.miofeather.commandblockstudio.main.config.CommandBlockStudioConfig;
 import com.miofeather.commandblockstudio.main.client.CommandBlockItemTooltip;
+import com.miofeather.commandblockstudio.main.client.CommandBlockScanner;
 import com.miofeather.commandblockstudio.main.client.CommandBlockWorkMode;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.level.block.CommandBlock;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.client.gui.components.WidgetSprites;
@@ -25,6 +28,7 @@ import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.ClientChatReceivedEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.client.settings.KeyModifier;
@@ -222,6 +226,7 @@ public class CommandBlockStudio {
 
     public CommandBlockStudio(IEventBus modEventBus, ModContainer modContainer) {
         modEventBus.addListener(this::registerKeyMappings);
+        modEventBus.addListener(this::buildCreativeToolsTab);
         modEventBus.addListener(this::onConfigLoading);
         modEventBus.addListener(this::onConfigReloading);
         NeoForge.EVENT_BUS.register(this);
@@ -311,6 +316,12 @@ public class CommandBlockStudio {
                 "key.category.cbs.keybinds");
         event.register(areaSelectionInput);
         event.register(workModeInput);
+    }
+
+    private void buildCreativeToolsTab(BuildCreativeModeTabContentsEvent event) {
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(CommandBlockScanner.createStack(), CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        }
     }
 
     @SubscribeEvent

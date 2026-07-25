@@ -53,7 +53,7 @@ public class CommandInsightService {
 
     public Optional<CommandInsight> describeAt(String command, int cursor) {
         ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
-        if (parse == null || command.isBlank()) {
+        if (!matchesCommand(parse, command) || command.isBlank()) {
             return Optional.empty();
         }
 
@@ -110,7 +110,7 @@ public class CommandInsightService {
 
     public Optional<CommandInsight> describeCursor(String command, int cursor) {
         ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
-        if (parse == null || command.isBlank()) {
+        if (!matchesCommand(parse, command) || command.isBlank()) {
             return Optional.empty();
         }
 
@@ -153,7 +153,7 @@ public class CommandInsightService {
 
     public Optional<CommandInsight> describeSuggestion(String command, int cursor, String suggestion) {
         ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
-        if (parse != null) {
+        if (matchesCommand(parse, command)) {
             Optional<CommandInsight> structured = StructuredArgumentCompletion.describeSuggestion(
                     command,
                     clamp(cursor, 0, command.length()),
@@ -172,7 +172,7 @@ public class CommandInsightService {
             return Optional.of(new CommandInsight("/" + doc.name(), doc.summary(), doc.examples(), true));
         }
 
-        if (parse == null) {
+        if (!matchesCommand(parse, command)) {
             return Optional.empty();
         }
 
@@ -188,13 +188,17 @@ public class CommandInsightService {
             return Optional.of(new CommandInsight(root + " " + normalizedSuggestion, nodeSummary, List.of(), true));
         }
 
-        SuggestionContext<SharedSuggestionProvider> context = parse.getContext().findSuggestionContext(clamp(cursor, 0, command.length()));
-        for (CommandNode<SharedSuggestionProvider> child : context.parent.getChildren()) {
+        Optional<SuggestionContext<SharedSuggestionProvider>> context =
+                safeSuggestionContext(parse, clamp(cursor, 0, command.length()));
+        if (context.isEmpty()) {
+            return Optional.empty();
+        }
+        for (CommandNode<SharedSuggestionProvider> child : context.get().parent.getChildren()) {
             if (child instanceof LiteralCommandNode && stripNamespace(child.getName()).equals(normalizedSuggestion)) {
                 return Optional.of(describeLiteral(root, doc, child.getName()));
             }
         }
-        for (CommandNode<SharedSuggestionProvider> child : context.parent.getChildren()) {
+        for (CommandNode<SharedSuggestionProvider> child : context.get().parent.getChildren()) {
             if (child instanceof ArgumentCommandNode<?, ?> argumentNode) {
                 @SuppressWarnings("unchecked")
                 ArgumentCommandNode<SharedSuggestionProvider, ?> typed =
@@ -319,16 +323,15 @@ public class CommandInsightService {
 
     private boolean expectsArgument(String command, int cursor, Set<String> typeNames, String nameFragment) {
         ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
-        if (parse == null) {
+        if (!matchesCommand(parse, command)) {
             return false;
         }
-        SuggestionContext<SharedSuggestionProvider> context;
-        try {
-            context = parse.getContext().findSuggestionContext(clamp(cursor, 0, command.length()));
-        } catch (IllegalArgumentException ignored) {
+        Optional<SuggestionContext<SharedSuggestionProvider>> context =
+                safeSuggestionContext(parse, clamp(cursor, 0, command.length()));
+        if (context.isEmpty()) {
             return false;
         }
-        for (CommandNode<SharedSuggestionProvider> child : context.parent.getChildren()) {
+        for (CommandNode<SharedSuggestionProvider> child : context.get().parent.getChildren()) {
             if (!(child instanceof ArgumentCommandNode<?, ?> argumentNode)) {
                 continue;
             }
@@ -344,16 +347,15 @@ public class CommandInsightService {
 
     private boolean expectsArgumentNamed(String command, int cursor, Set<String> names) {
         ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
-        if (parse == null) {
+        if (!matchesCommand(parse, command)) {
             return false;
         }
-        SuggestionContext<SharedSuggestionProvider> context;
-        try {
-            context = parse.getContext().findSuggestionContext(clamp(cursor, 0, command.length()));
-        } catch (IllegalArgumentException | IllegalStateException ignored) {
+        Optional<SuggestionContext<SharedSuggestionProvider>> context =
+                safeSuggestionContext(parse, clamp(cursor, 0, command.length()));
+        if (context.isEmpty()) {
             return false;
         }
-        for (CommandNode<SharedSuggestionProvider> child : context.parent.getChildren()) {
+        for (CommandNode<SharedSuggestionProvider> child : context.get().parent.getChildren()) {
             if (!(child instanceof ArgumentCommandNode<?, ?>)) {
                 continue;
             }
@@ -367,7 +369,7 @@ public class CommandInsightService {
 
     public Optional<CommandDiagnostic> getDiagnostic(String command) {
         ParseResults<SharedSuggestionProvider> parse = suggestor.getCurrentParse();
-        if (parse == null || command.isBlank()) {
+        if (!matchesCommand(parse, command) || command.isBlank()) {
             return Optional.empty();
         }
 
@@ -460,23 +462,21 @@ public class CommandInsightService {
         }
 
         int index = clamp(cursor, 0, command.length());
-        SuggestionContext<SharedSuggestionProvider> context;
-        try {
-            context = parse.getContext().findSuggestionContext(index);
-        } catch (IllegalStateException ignored) {
+        Optional<SuggestionContext<SharedSuggestionProvider>> context = safeSuggestionContext(parse, index);
+        if (context.isEmpty()) {
             return Optional.empty();
         }
 
-        int argumentStart = clamp(Math.min(context.startPos, index), 0, index);
+        int argumentStart = clamp(Math.min(context.get().startPos, index), 0, index);
         String partial = command.substring(argumentStart, index);
         if ((!partial.isEmpty() && Character.isWhitespace(partial.charAt(0)))
                 || partial.indexOf('\n') >= 0 || partial.indexOf('\r') >= 0 || partial.indexOf('\t') >= 0) {
             return Optional.empty();
         }
 
-        List<CommandNode<SharedSuggestionProvider>> candidates = new ArrayList<>(context.parent.getChildren());
-        if (context.parent.getRedirect() != null) {
-            candidates.addAll(context.parent.getRedirect().getChildren());
+        List<CommandNode<SharedSuggestionProvider>> candidates = new ArrayList<>(context.get().parent.getChildren());
+        if (context.get().parent.getRedirect() != null) {
+            candidates.addAll(context.get().parent.getRedirect().getChildren());
         }
 
         for (CommandNode<SharedSuggestionProvider> candidate : candidates) {
@@ -486,7 +486,7 @@ public class CommandInsightService {
             @SuppressWarnings("unchecked")
             ArgumentCommandNode<SharedSuggestionProvider, ?> typed =
                     (ArgumentCommandNode<SharedSuggestionProvider, ?>) argumentNode;
-            Optional<CommandSyntaxHint> hint = buildCompositeHint(typed, partial, command, context.parent);
+            Optional<CommandSyntaxHint> hint = buildCompositeHint(typed, partial, command, context.get().parent);
             if (hint.isPresent()) {
                 return hint;
             }
@@ -516,7 +516,7 @@ public class CommandInsightService {
                 continue;
             }
             String failedPartial = command.substring(failedArgumentStart, index);
-            CommandNode<SharedSuggestionProvider> failedUsageParent = findParentNode(typed).orElse(context.parent);
+            CommandNode<SharedSuggestionProvider> failedUsageParent = findParentNode(typed).orElse(context.get().parent);
             Optional<CommandSyntaxHint> hint = buildCompositeHint(
                     typed,
                     failedPartial,
@@ -853,8 +853,11 @@ public class CommandInsightService {
             return Optional.empty();
         }
 
-        SuggestionContext<SharedSuggestionProvider> context = parse.getContext().findSuggestionContext(cursor);
-        CommandNode<SharedSuggestionProvider> usageParent = context.parent;
+        Optional<SuggestionContext<SharedSuggestionProvider>> context = safeSuggestionContext(parse, cursor);
+        if (context.isEmpty()) {
+            return Optional.empty();
+        }
+        CommandNode<SharedSuggestionProvider> usageParent = context.get().parent;
         String input = parse.getReader().getString();
         if (cursor > 0 && cursor <= input.length() && !Character.isWhitespace(input.charAt(cursor - 1))) {
             usageParent = findNodeEndingAt(parse, cursor)
@@ -889,6 +892,25 @@ public class CommandInsightService {
             }
         }
         return Optional.of(new CommandInsight(title, summary, List.of(), true));
+    }
+
+    private static boolean matchesCommand(
+            ParseResults<SharedSuggestionProvider> parse,
+            String command
+    ) {
+        return parse != null && parse.getReader().getString().equals(command);
+    }
+
+    private static Optional<SuggestionContext<SharedSuggestionProvider>> safeSuggestionContext(
+            ParseResults<SharedSuggestionProvider> parse,
+            int cursor
+    ) {
+        try {
+            int inputLength = parse.getReader().getString().length();
+            return Optional.of(parse.getContext().findSuggestionContext(clamp(cursor, 0, inputLength)));
+        } catch (IllegalArgumentException | IllegalStateException ignored) {
+            return Optional.empty();
+        }
     }
 
     private Map<CommandNode<SharedSuggestionProvider>, String> getSmartUsages(

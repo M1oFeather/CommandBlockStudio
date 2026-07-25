@@ -76,7 +76,7 @@ docs/                              # Markdown 与静态资源
 每次准备发布时：
 
 1. 在 `docs/releases/<版本>/` 创建 `common.md` 与 `release-notes.md`。
-2. 更新 `docs/releases/changelog.md` 和根目录 `CHANGELOG.md`。
+2. 更新 `docs/releases/changelog.md`、根目录 `CHANGELOG.md` 和 `CHANGELOG.zh-CN.md`。
 3. 需要平台文本时，在该版本下建立 `platforms/`。
 4. 将所有新增页面加入 `mkdocs.yml`。
 5. 发布完成后补充发布日期、下载链接和平台页面链接。

@@ -1,7 +1,9 @@
 # 更新日志
 
-这里记录面向玩家的完整中文更新历史。仓库根目录同时提供
-`CHANGELOG.zh-CN.md` 中文版与 `CHANGELOG.md` 英文版。
+[English](CHANGELOG.md) | **简体中文**
+
+面向玩家的版本更新历史如下；每个版本的完整发布说明与平台文案位于
+[`docs/releases/`](docs/releases/index.md)。
 
 ## 1.1.0
 
@@ -43,7 +45,7 @@
 - 不支持的共享功能会隐藏或禁用，而不是中断连接。
 - 继续支持仅客户端或仅服务端安装。
 
-[查看 1.1.0 Release Notes](1.1.0/release-notes.md)
+[查看 1.1.0 完整发布说明](docs/releases/1.1.0/release-notes.md)
 
 ## 1.0.0
 
@@ -71,4 +73,4 @@
 - 为 WorldEdit、Carpet、Create、CMDCam、Corpse、Dynamic Trees、Exposure、Serene Seasons、Supplementaries、WaterFrames、SecurityCraft 和 Yes Steve Model 提供已确认的根命令说明。
 - 未内置的服务器命令继续根据当前 Brigadier 命令树生成候选和参数类型说明。
 
-[查看 1.0.0 Release Notes](1.0.0/release-notes.md)
+[查看 1.0.0 完整发布说明](docs/releases/1.0.0/release-notes.md)

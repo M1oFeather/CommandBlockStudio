@@ -36,6 +36,7 @@ public final class CommandBlockAnnotationNetwork {
     private static final double MAX_EDIT_DISTANCE_SQUARED = 64.0D * 64.0D;
     private static final Map<BlockPos, AnnotationSnapshot> RECEIVED_ANNOTATIONS = new ConcurrentHashMap<>();
     private static final Map<BlockPos, CommandPreviewSnapshot> RECEIVED_PREVIEWS = new ConcurrentHashMap<>();
+    private static final Map<BlockPos, String> RECEIVED_PREVIEW_ANNOTATIONS = new ConcurrentHashMap<>();
 
     private CommandBlockAnnotationNetwork() {
     }
@@ -47,9 +48,11 @@ public final class CommandBlockAnnotationNetwork {
         registrar.playToServer(UpdateAnnotation.TYPE, UpdateAnnotation.STREAM_CODEC, CommandBlockAnnotationNetwork::handleUpdate);
         registrar.playToServer(RequestOpenCommandBlock.TYPE, RequestOpenCommandBlock.STREAM_CODEC, CommandBlockAnnotationNetwork::handleOpen);
         registrar.playToServer(RequestCommandPreview.TYPE, RequestCommandPreview.STREAM_CODEC, CommandBlockAnnotationNetwork::handlePreviewRequest);
+        registrar.playToServer(RequestPreviewAnnotation.TYPE, RequestPreviewAnnotation.STREAM_CODEC, CommandBlockAnnotationNetwork::handlePreviewAnnotationRequest);
         registrar.playToServer(RunCommandBlock.TYPE, RunCommandBlock.STREAM_CODEC, CommandBlockAnnotationNetwork::handleRun);
         registrar.playToClient(SyncAnnotation.TYPE, SyncAnnotation.STREAM_CODEC, CommandBlockAnnotationNetwork::handleSync);
         registrar.playToClient(SyncCommandPreview.TYPE, SyncCommandPreview.STREAM_CODEC, CommandBlockAnnotationNetwork::handlePreviewSync);
+        registrar.playToClient(SyncPreviewAnnotation.TYPE, SyncPreviewAnnotation.STREAM_CODEC, CommandBlockAnnotationNetwork::handlePreviewAnnotationSync);
         registrar.playToClient(RunCommandBlockResult.TYPE, RunCommandBlockResult.STREAM_CODEC, CommandBlockAnnotationNetwork::handleRunResult);
     }
 
@@ -67,6 +70,14 @@ public final class CommandBlockAnnotationNetwork {
 
     public static Optional<CommandPreviewSnapshot> takeReceivedPreview(BlockPos pos) {
         return Optional.ofNullable(RECEIVED_PREVIEWS.remove(pos));
+    }
+
+    public static void clearReceivedPreviewAnnotation(BlockPos pos) {
+        RECEIVED_PREVIEW_ANNOTATIONS.remove(pos);
+    }
+
+    public static Optional<String> takeReceivedPreviewAnnotation(BlockPos pos) {
+        return Optional.ofNullable(RECEIVED_PREVIEW_ANNOTATIONS.remove(pos));
     }
 
     private static void handleRequest(RequestAnnotation payload, IPayloadContext context) {
@@ -122,6 +133,17 @@ public final class CommandBlockAnnotationNetwork {
                 : createPreviewPayload(payload.pos(), commandBlock));
     }
 
+    private static void handlePreviewAnnotationRequest(RequestPreviewAnnotation payload, IPayloadContext context) {
+        if (!(context.player() instanceof ServerPlayer player)) {
+            return;
+        }
+        CommandBlockEntity commandBlock = editableCommandBlock(player, payload.pos());
+        context.reply(new SyncPreviewAnnotation(
+                payload.pos(),
+                commandBlock == null ? "" : limitAnnotation(commandBlock.getPersistentData().getString(DATA_KEY))
+        ));
+    }
+
     private static void handleRun(RunCommandBlock payload, IPayloadContext context) {
         if (!(context.player() instanceof ServerPlayer player)) {
             return;
@@ -147,6 +169,10 @@ public final class CommandBlockAnnotationNetwork {
 
     private static void handlePreviewSync(SyncCommandPreview payload, IPayloadContext context) {
         RECEIVED_PREVIEWS.put(payload.pos().immutable(), payload.snapshot());
+    }
+
+    private static void handlePreviewAnnotationSync(SyncPreviewAnnotation payload, IPayloadContext context) {
+        RECEIVED_PREVIEW_ANNOTATIONS.put(payload.pos().immutable(), payload.annotation());
     }
 
     private static void handleRunResult(RunCommandBlockResult payload, IPayloadContext context) {
@@ -242,10 +268,23 @@ public final class CommandBlockAnnotationNetwork {
     }
 
     public static Optional<LatestEditInfo> latestEditFromBlockEntityData(CompoundTag blockEntityData) {
-        CompoundTag persistentData = blockEntityData.contains(NEOFORGE_DATA_KEY, Tag.TAG_COMPOUND)
+        return latestEdit(persistentDataFromBlockEntityData(blockEntityData));
+    }
+
+    public static String annotationFromBlockEntityData(CompoundTag blockEntityData) {
+        return limitAnnotation(persistentDataFromBlockEntityData(blockEntityData).getString(DATA_KEY));
+    }
+
+    private static String limitAnnotation(String annotation) {
+        return annotation.length() <= MAX_ANNOTATION_LENGTH
+                ? annotation
+                : annotation.substring(0, MAX_ANNOTATION_LENGTH);
+    }
+
+    private static CompoundTag persistentDataFromBlockEntityData(CompoundTag blockEntityData) {
+        return blockEntityData.contains(NEOFORGE_DATA_KEY, Tag.TAG_COMPOUND)
                 ? blockEntityData.getCompound(NEOFORGE_DATA_KEY)
                 : blockEntityData;
-        return latestEdit(persistentData);
     }
 
     private static Optional<LatestEditInfo> latestEdit(CompoundTag persistentData) {
@@ -373,6 +412,20 @@ public final class CommandBlockAnnotationNetwork {
         }
     }
 
+    public record RequestPreviewAnnotation(BlockPos pos) implements CustomPacketPayload {
+        public static final Type<RequestPreviewAnnotation> TYPE = new Type<>(id("preview_annotation_request"));
+        public static final StreamCodec<ByteBuf, RequestPreviewAnnotation> STREAM_CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC,
+                RequestPreviewAnnotation::pos,
+                RequestPreviewAnnotation::new
+        );
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
+        }
+    }
+
     public record RunCommandBlock(BlockPos pos) implements CustomPacketPayload {
         public static final Type<RunCommandBlock> TYPE = new Type<>(id("command_run_request"));
         public static final StreamCodec<ByteBuf, RunCommandBlock> STREAM_CODEC = StreamCodec.composite(
@@ -490,6 +543,22 @@ public final class CommandBlockAnnotationNetwork {
 
         public CommandPreviewSnapshot snapshot() {
             return new CommandPreviewSnapshot(available, command, mode, conditional, automatic, timestamp, editor);
+        }
+    }
+
+    public record SyncPreviewAnnotation(BlockPos pos, String annotation) implements CustomPacketPayload {
+        public static final Type<SyncPreviewAnnotation> TYPE = new Type<>(id("preview_annotation_sync"));
+        public static final StreamCodec<ByteBuf, SyncPreviewAnnotation> STREAM_CODEC = StreamCodec.composite(
+                BlockPos.STREAM_CODEC,
+                SyncPreviewAnnotation::pos,
+                ByteBufCodecs.stringUtf8(MAX_ANNOTATION_LENGTH),
+                SyncPreviewAnnotation::annotation,
+                SyncPreviewAnnotation::new
+        );
+
+        @Override
+        public Type<? extends CustomPacketPayload> type() {
+            return TYPE;
         }
     }
 

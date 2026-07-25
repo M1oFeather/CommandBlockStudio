@@ -37,8 +37,9 @@ import java.util.Optional;
 @OnlyIn(Dist.CLIENT)
 public final class CommandBlockWorkMode {
     private static final long REFRESH_INTERVAL_MILLIS = 1_000L;
-    private static final int PANEL_TEXT_WIDTH = 210;
-    private static final int MAX_COMMAND_LINES = 8;
+    private static final int PANEL_TEXT_WIDTH = 184;
+    private static final int MAX_COMMAND_LINES = 12;
+    private static final int MAX_ANNOTATION_LINES = 3;
     private static final float HOLOGRAM_SCALE = 0.014F;
     private static final DateTimeFormatter EDIT_TIME_FORMAT = DateTimeFormatter.ofPattern("MM-dd HH:mm")
             .withZone(ZoneId.systemDefault());
@@ -48,6 +49,7 @@ public final class CommandBlockWorkMode {
     private BlockPos target;
     private Direction targetFace = Direction.NORTH;
     private CommandBlockAnnotationNetwork.CommandPreviewSnapshot preview;
+    private String annotation = "";
     private boolean unavailable;
     private long nextRefreshAt;
 
@@ -64,7 +66,7 @@ public final class CommandBlockWorkMode {
     @SubscribeEvent
     public void onClientTick(ClientTickEvent.Post event) {
         Minecraft client = Minecraft.getInstance();
-        if (!enabled || client.player == null || client.level == null || client.screen != null) {
+        if (!isActive(client) || client.player == null || client.level == null || client.screen != null) {
             clearTarget();
             return;
         }
@@ -74,19 +76,27 @@ public final class CommandBlockWorkMode {
             clearTarget();
             return;
         }
-        targetFace = pointed.face();
         if (!pointed.position().equals(target)) {
+            if (target != null) {
+                CommandBlockAnnotationNetwork.clearReceivedPreview(target);
+                CommandBlockAnnotationNetwork.clearReceivedPreviewAnnotation(target);
+            }
             target = pointed.position().immutable();
+            targetFace = pointed.face();
             preview = null;
+            annotation = "";
             unavailable = false;
             nextRefreshAt = 0L;
             CommandBlockAnnotationNetwork.clearReceivedPreview(target);
+            CommandBlockAnnotationNetwork.clearReceivedPreviewAnnotation(target);
         }
 
         CommandBlockAnnotationNetwork.takeReceivedPreview(target).ifPresent(snapshot -> {
             preview = snapshot.available() ? snapshot : null;
             unavailable = !snapshot.available();
         });
+        CommandBlockAnnotationNetwork.takeReceivedPreviewAnnotation(target)
+                .ifPresent(received -> annotation = received);
 
         long now = Util.getMillis();
         if (now < nextRefreshAt) {
@@ -96,10 +106,14 @@ public final class CommandBlockWorkMode {
         if (client.getConnection() != null
                 && client.getConnection().hasChannel(CommandBlockAnnotationNetwork.RequestCommandPreview.TYPE)) {
             client.getConnection().send(new CommandBlockAnnotationNetwork.RequestCommandPreview(target));
+            if (client.getConnection().hasChannel(CommandBlockAnnotationNetwork.RequestPreviewAnnotation.TYPE)) {
+                client.getConnection().send(new CommandBlockAnnotationNetwork.RequestPreviewAnnotation(target));
+            }
             return;
         }
 
         preview = localPreview(client, target).orElse(null);
+        annotation = localAnnotation(client, target);
         unavailable = preview == null;
     }
 
@@ -109,13 +123,13 @@ public final class CommandBlockWorkMode {
             return;
         }
         Minecraft client = Minecraft.getInstance();
-        if (!enabled || target == null || client.screen != null || client.options.hideGui) {
+        if (!isActive(client) || target == null || client.screen != null || client.options.hideGui) {
             return;
         }
 
         Font font = client.font;
         List<ProjectedLine> lines = buildProjectionLines(font);
-        int panelWidth = Math.max(116, lines.stream().mapToInt(line -> font.width(line.text())).max().orElse(100) + 16);
+        int panelWidth = PANEL_TEXT_WIDTH + 16;
         int panelHeight = lines.size() * 10 + 12;
         float left = -panelWidth / 2.0F;
         float top = -panelHeight / 2.0F;
@@ -165,6 +179,7 @@ public final class CommandBlockWorkMode {
                 Component.translatable("cbs.workMode.title").getVisualOrderText(),
                 0xFFF2F4F7
         ));
+        appendAnnotationLines(lines, font);
         lines.add(new ProjectedLine(
                 Component.literal(target.getX() + ", " + target.getY() + ", " + target.getZ()).getVisualOrderText(),
                 0xFF8B949E
@@ -178,9 +193,13 @@ public final class CommandBlockWorkMode {
             return lines;
         }
 
-        Component command = Component.literal(preview.command().isBlank() ? "<empty>" : preview.command())
-                .withStyle(preview.command().isBlank() ? ChatFormatting.DARK_GRAY : ChatFormatting.AQUA);
-        List<FormattedCharSequence> commandLines = font.split(command, PANEL_TEXT_WIDTH);
+        String command = preview.command().isBlank() ? "<empty>" : preview.command();
+        ChatFormatting commandColor = preview.command().isBlank() ? ChatFormatting.DARK_GRAY : ChatFormatting.AQUA;
+        List<FormattedCharSequence> commandLines = CommandProjectionFormatter
+                .formatAndWrap(command, font, PANEL_TEXT_WIDTH)
+                .stream()
+                .map(line -> Component.literal(line).withStyle(commandColor).getVisualOrderText())
+                .toList();
         int visibleLines = Math.min(MAX_COMMAND_LINES, commandLines.size());
         for (int i = 0; i < visibleLines; i++) {
             lines.add(new ProjectedLine(commandLines.get(i), 0xFFE6EDF3));
@@ -203,6 +222,26 @@ public final class CommandBlockWorkMode {
             lines.add(new ProjectedLine(edited.getVisualOrderText(), 0xFF707A85));
         }
         return lines;
+    }
+
+    private void appendAnnotationLines(List<ProjectedLine> lines, Font font) {
+        if (annotation.isBlank()) {
+            return;
+        }
+        Component label = Component.translatable("cbs.annotation.title").append(Component.literal(": "));
+        int bodyWidth = Math.max(16, PANEL_TEXT_WIDTH - font.width(label));
+        List<String> annotationLines = CommandProjectionFormatter.wrapPlain(annotation, font, bodyWidth);
+        int visibleLines = Math.min(MAX_ANNOTATION_LINES, annotationLines.size());
+        for (int i = 0; i < visibleLines; i++) {
+            Component body = Component.literal(annotationLines.get(i)).withStyle(ChatFormatting.YELLOW);
+            Component line = i == 0
+                    ? label.copy().withStyle(ChatFormatting.GRAY).append(body)
+                    : body;
+            lines.add(new ProjectedLine(line.getVisualOrderText(), 0xFFE6EDF3));
+        }
+        if (annotationLines.size() > visibleLines) {
+            lines.add(new ProjectedLine(Component.literal("...").getVisualOrderText(), 0xFF8B949E));
+        }
     }
 
     private static void addPanelQuad(
@@ -255,15 +294,31 @@ public final class CommandBlockWorkMode {
         ));
     }
 
+    private static String localAnnotation(Minecraft client, BlockPos pos) {
+        BlockEntity blockEntity = client.level.getBlockEntity(pos);
+        if (!(blockEntity instanceof CommandBlockEntity commandBlock)) {
+            return "";
+        }
+        return CommandBlockAnnotationNetwork.annotationFromBlockEntityData(
+                commandBlock.saveWithoutMetadata(client.level.registryAccess())
+        );
+    }
+
     private void clearTarget() {
         if (target != null) {
             CommandBlockAnnotationNetwork.clearReceivedPreview(target);
+            CommandBlockAnnotationNetwork.clearReceivedPreviewAnnotation(target);
         }
         target = null;
         targetFace = Direction.NORTH;
         preview = null;
+        annotation = "";
         unavailable = false;
         nextRefreshAt = 0L;
+    }
+
+    private static boolean isActive(Minecraft client) {
+        return enabled || client.player != null && CommandBlockScanner.isHeld(client.player);
     }
 
     private static int accentColor(CommandBlockAnnotationNetwork.CommandPreviewSnapshot snapshot) {

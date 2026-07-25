@@ -11,6 +11,8 @@
     "ClientCommonPacketListenerImplAccessor",
     "LocalPlayerAccessor",
     "ClientPacketListenerMixin",
+    "ChatComponentMixin",
+    "ChatScreenAccessor",
     "ChatScreenMixin",
     "CommandBlockMinecartMixin",
     "CommandBlockMixin",

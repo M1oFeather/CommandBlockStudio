@@ -1,13 +1,17 @@
 # Changelog
 
-The user-facing Chinese changelog and per-release notes are maintained in
+[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md)
+
+The user-facing Chinese changelog is available in
+[`CHANGELOG.zh-CN.md`](CHANGELOG.zh-CN.md), with per-release notes maintained in
 [`docs/releases/`](docs/releases/index.md).
 
-## 1.1.0 - Unreleased
+## 1.1.0 - 2026-07-25
 
 ### Command block inspection
 
-- Added command previews to command block item tooltips when the stack carries block-entity data.
+- Added wrapped command previews to command block item tooltips when the stack carries block-entity data.
+- Show shared annotations directly below the item or projection title when available.
 - Added last-edit time and editor metadata when the copied item carries Command Block Studio history.
 - Added a configurable work-mode key binding, defaulting to `Alt+Tab`, that renders a camera-facing holographic panel in front of the targeted command block, including command text, mode, coordinates, and last editor.
 - Fixed long-command wrapping and horizontal scrolling so spaces retain their width and mouse/caret positions remain aligned with proportional font metrics.
@@ -17,17 +21,23 @@ The user-facing Chinese changelog and per-release notes are maintained in
 
 - Added a client-side command assistant that opens on the right quarter of the chat screen when the input begins with `/`.
 - Reused Studio documentation and structured completion for chat commands, including `Ctrl+Space`.
+- Restored keyboard focus to the replacement multiline chat editor so typing works immediately after opening `/` chat.
+- Kept chat command completions inside the Studio editor instead of rendering them on the vanilla bottom layer.
+- Removed redundant chat-editor hover documentation and guarded transient Brigadier parse states after accepting a completion.
+- Raised completion popups above editor text and kept visual icon gutters from covering characters before the caret.
+- Clicking quoted content now selects the text inside the quotes on the first click and moves the caret to its end on the second; completion replaces the whole selection without overlapping ghost text.
 - Added block, item, particle, and player visuals to chat completion, with animated particle previews and online-player latency/game-mode details.
 - Kept ordinary chat unchanged and sourced available commands from the server-synchronized Brigadier tree.
 
 ### Run and compatibility
 
 - Added an editor run-test button that saves the current draft and triggers the command block once without placing redstone.
+- Fixed Studio icons being enlarged and cropped on Minecraft 1.21.4 and 26.2 due to version-specific texture blit parameter ordering.
 - Added independent optional payloads for command preview and run-test execution with the same stable protocol generation as 1.0.0.
 - Server features are now negotiated per payload: different mod versions can connect, and unsupported controls are disabled instead of failing the connection.
 - Kept client-only and server-only installations supported.
 
-## 1.0.0 - 2026-07-19
+## 1.0.0 - 2026-07-21
 
 ### NeoForge port
 

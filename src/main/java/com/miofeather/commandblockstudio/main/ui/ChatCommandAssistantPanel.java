@@ -21,7 +21,7 @@ import java.util.Optional;
 public final class ChatCommandAssistantPanel {
     private final Font font;
     private final EditBox input;
-    private final ChatCommandSuggestor suggestor;
+    private final MultiLineCommandSuggestor suggestor;
     private int x;
     private int y;
     private int width;
@@ -32,7 +32,7 @@ public final class ChatCommandAssistantPanel {
     private String cachedContentKey = "";
     private List<FormattedCharSequence> cachedLines = List.of();
 
-    public ChatCommandAssistantPanel(Font font, EditBox input, ChatCommandSuggestor suggestor) {
+    public ChatCommandAssistantPanel(Font font, EditBox input, MultiLineCommandSuggestor suggestor) {
         this.font = font;
         this.input = input;
         this.suggestor = suggestor;
@@ -43,11 +43,10 @@ public final class ChatCommandAssistantPanel {
         this.y = y;
         this.width = Math.max(120, width);
         this.height = Math.max(90, height);
-        suggestor.setPanelX(x);
     }
 
     public boolean isVisible() {
-        return suggestor.isCommandMode();
+        return input.getValue().startsWith("/");
     }
 
     public boolean mouseScrolled(double mouseX, double mouseY, double amount) {

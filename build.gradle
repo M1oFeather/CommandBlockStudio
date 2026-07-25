@@ -186,6 +186,136 @@ tasks.named('jar', Jar).configure {
     }
 }
 
+def releaseModId = mod_id.toString()
+def releaseModVersion = mod_version.toString()
+def releaseVariants = [
+        [
+                taskSuffix      : '1204',
+                minecraftVersion: '1.20.4',
+                directory       : file('../CommandBlockStudio-1.20.4'),
+                local           : false,
+        ],
+        [
+                taskSuffix      : '1211',
+                minecraftVersion: '1.21.1',
+                directory       : projectDir,
+                local           : true,
+        ],
+        [
+                taskSuffix      : '1214',
+                minecraftVersion: '1.21.4',
+                directory       : file('../CommandBlockStudio-1.21.4'),
+                local           : false,
+        ],
+        [
+                taskSuffix      : '262',
+                minecraftVersion: '26.2',
+                directory       : file('../CommandBlockStudio-26.2'),
+                local           : false,
+        ],
+]
+
+def releaseOutputDirectory = providers.gradleProperty('releaseOutputDir')
+        .map { file(it) }
+        .orElse(layout.projectDirectory.dir("dist/${releaseModVersion}").asFile)
+
+def verifyReleaseWorktrees = tasks.register('verifyReleaseWorktrees') {
+    group = 'release'
+    description = 'Verifies that every supported-version worktree exists and targets the requested release version.'
+
+    doLast {
+        releaseVariants.each { variant ->
+            File worktree = variant.directory
+            File propertiesFile = new File(worktree, 'gradle.properties')
+            File wrapper = new File(worktree, 'gradlew.bat')
+            if (!propertiesFile.isFile() || !wrapper.isFile()) {
+                throw new GradleException(
+                        "Missing Gradle worktree for Minecraft ${variant.minecraftVersion}: ${worktree}"
+                )
+            }
+
+            Properties variantProperties = new Properties()
+            propertiesFile.withInputStream { variantProperties.load(it) }
+            if (variantProperties.getProperty('minecraft_version') != variant.minecraftVersion) {
+                throw new GradleException(
+                        "Expected Minecraft ${variant.minecraftVersion} in ${propertiesFile}, "
+                                + "found ${variantProperties.getProperty('minecraft_version')}"
+                )
+            }
+            if (variantProperties.getProperty('mod_version') != releaseModVersion) {
+                throw new GradleException(
+                        "Expected mod version ${releaseModVersion} in ${propertiesFile}, "
+                                + "found ${variantProperties.getProperty('mod_version')}"
+                )
+            }
+        }
+    }
+}
+
+def releaseBuildTasks = []
+releaseVariants.each { variant ->
+    if (variant.local) {
+        releaseBuildTasks.add(tasks.register("buildRelease${variant.taskSuffix}") {
+            group = 'release'
+            description = "Builds the Minecraft ${variant.minecraftVersion} release artifact."
+            dependsOn verifyReleaseWorktrees
+            dependsOn tasks.named('build')
+        })
+    } else {
+        releaseBuildTasks.add(tasks.register("buildRelease${variant.taskSuffix}", Exec) {
+            group = 'release'
+            description = "Builds the Minecraft ${variant.minecraftVersion} release artifact."
+            dependsOn verifyReleaseWorktrees
+            workingDir variant.directory
+            commandLine new File(variant.directory, 'gradlew.bat'), '--no-daemon', 'build'
+        })
+    }
+}
+
+for (int index = 1; index < releaseBuildTasks.size(); index++) {
+    def currentReleaseBuild = releaseBuildTasks[index]
+    def previousReleaseBuild = releaseBuildTasks[index - 1]
+    currentReleaseBuild.configure {
+        mustRunAfter previousReleaseBuild
+    }
+}
+
+def collectReleaseArtifacts = tasks.register('collectReleaseArtifacts', Sync) {
+    group = 'release'
+    description = 'Collects every supported-version release artifact into one output directory.'
+    dependsOn releaseBuildTasks
+    into releaseOutputDirectory
+
+    releaseVariants.each { variant ->
+        from(new File(
+                variant.directory,
+                "build/libs/${releaseModId}-${releaseModVersion}-${variant.minecraftVersion}-NeoForge.jar"
+        ))
+    }
+
+    doFirst {
+        releaseVariants.each { variant ->
+            File artifact = new File(
+                    variant.directory,
+                    "build/libs/${releaseModId}-${releaseModVersion}-${variant.minecraftVersion}-NeoForge.jar"
+            )
+            if (!artifact.isFile()) {
+                throw new GradleException("Missing release artifact after build: ${artifact}")
+            }
+        }
+    }
+}
+
+tasks.register('buildAllVersions') {
+    group = 'release'
+    description = 'Builds all supported Minecraft versions and collects their jars under dist/<mod version>.'
+    dependsOn collectReleaseArtifacts
+
+    doLast {
+        logger.lifecycle("All release artifacts: ${releaseOutputDirectory.get()}")
+    }
+}
+
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {
     publications {
